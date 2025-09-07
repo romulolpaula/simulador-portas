@@ -8,8 +8,65 @@
         Title="Login" Height="450" Width="800"
         Background="white">
     <Grid>
-        <Label x:Name="lbLogin" Content="LOGIN" HorizontalAlignment="Center" Margin="0,69,0,0" VerticalAlignment="Top" FontFamily="Century Gothic" FontWeight="Bold" FontSize="22" Foreground="black"/>
-        <TextBox x:Name="txtEmail" HorizontalAlignment="Center" Margin="0,293,0,0" TextWrapping="Wrap" Text="Digite seu e-mail" VerticalAlignment="Top" Width="104"/>
+        <Label x:Name="lbLogin" 
+               Content="LOGIN" 
+               HorizontalAlignment="Center" 
+               Margin="0,69,0,0" 
+               VerticalAlignment="Top" 
+               FontFamily="Century Gothic" 
+               FontWeight="Bold" 
+               FontSize="22" 
+               Foreground="black"/>
+        <Label x:Name="lblEmail" 
+               Content="Digite seu e-mail:" 
+               HorizontalAlignment="Center" 
+               Margin="0,111,0,0" 
+               VerticalAlignment="Top" 
+               Width="110" Height="28" 
+               FontFamily="Century Gothic" 
+               Foreground="Black"/>
+        <TextBox x:Name="txtEmail" 
+                HorizontalAlignment="Center" 
+                Margin="0,144,0,0" 
+                TextWrapping="Wrap" 
+                Text="" VerticalAlignment="Top" 
+                Width="286" 
+                Background="LightGray"/>
+        <Label x:Name="lblSenha" 
+               Content="Digite sua senha:" 
+               HorizontalAlignment="Center" 
+               Margin="0,184,0,0" 
+               VerticalAlignment="Top" 
+               Width="110" Height="28" 
+               FontFamily="Century Gothic" 
+               Foreground="Black"/>
+        <TextBox x:Name="txtSenha" 
+                HorizontalAlignment="Center" 
+                Margin="0,217,0,0" 
+                TextWrapping="Wrap" 
+                Text="" 
+                VerticalAlignment="Top" 
+                Width="286" 
+                Background="LightGray"/>
+        <Button x:Name="btnEntrar" 
+                Content="Entrar" 
+                HorizontalAlignment="Center" 
+                Margin="0,285,0,0" 
+                VerticalAlignment="Top"
+                Width="110"
+                FontFamily="Century Gothic"
+                Background="Aquamarine" Height="25">
+
+            <Button.Template>
+                <ControlTemplate TargetType="Button">
+                    <Border Background="LightGray" CornerRadius="5">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                </ControlTemplate>
+            </Button.Template>
+
+        </Button>
+
 
     </Grid>
 </Window>
