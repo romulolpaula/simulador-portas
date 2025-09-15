@@ -55,17 +55,19 @@
                 VerticalAlignment="Top"
                 Width="110"
                 FontFamily="Century Gothic"
-                Background="Aquamarine" Height="25" Click="btnEntrar_Click">
+                Background="Aquamarine" 
+                Height="25">
 
-            <Button.Template>
-                <ControlTemplate TargetType="Button">
-                    <Border Background="LightGray" CornerRadius="5">
-                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                    </Border>
-                </ControlTemplate>
-            </Button.Template>
-
+        <Button.Template>
+            <ControlTemplate TargetType="Button">
+                <Border Background="LightGray" CornerRadius="5">
+                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+            </ControlTemplate>
+        </Button.Template>
         </Button>
+
+
 
 
     </Grid>

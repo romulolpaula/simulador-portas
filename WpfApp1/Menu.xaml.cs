@@ -15,11 +15,11 @@ using System.Windows.Shapes;
 namespace WpfApp1
 {
     /// <summary>
-    /// Lógica interna para Login.xaml
+    /// Lógica interna para Menu.xaml
     /// </summary>
-    public partial class Login : Window
+    public partial class Menu : Window
     {
-        public Login()
+        public Menu()
         {
             InitializeComponent();
         }
