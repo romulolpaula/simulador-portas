@@ -6,15 +6,16 @@ using System.Threading.Tasks;
 
 namespace WpfApp1.Classes
 {
-    public class PortaOR : Portas 
+    class PortaNOR : Portas
     {
         public override bool CalcularSaida()
         {
             foreach (bool entrada in Entradas)
             {
-                if (entrada) return true;
+                if (entrada) return false; //se alguma entrada for true, a saída é false
             }
-            return false;
+
+            return true; //só retorna true se todas forem false
         }
     }
 }

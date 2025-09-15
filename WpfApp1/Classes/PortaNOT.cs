@@ -6,7 +6,14 @@ using System.Threading.Tasks;
 
 namespace WpfApp1.Classes
 {
-    class PortaNOT
+    public class PortaNOT : Portas
     {
+        public override bool CalcularSaida()
+        {
+            if (Entradas.Count != 1)
+                throw new ArgumentException("A Porta NOT só aceita uma entrada!");
+
+            return !Entradas[0]; // inverte
+        }
     }
 }

@@ -6,7 +6,9 @@ using System.Threading.Tasks;
 
 namespace WpfApp1.Classes
 {
-    class Portas
+    public abstract class Portas
     {
+        public List<bool> Entradas { get; set; }
+        public abstract bool CalcularSaida();
     }
 }

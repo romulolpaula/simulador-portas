@@ -6,15 +6,14 @@ using System.Threading.Tasks;
 
 namespace WpfApp1.Classes
 {
-    public class PortaOR : Portas 
+    class PortaXOR : Portas
     {
         public override bool CalcularSaida()
         {
-            foreach (bool entrada in Entradas)
-            {
-                if (entrada) return true;
-            }
-            return false;
+            if (Entradas.Count != 2)
+                throw new ArgumentException("A Porta XOR só aceita duas entradas!");
+
+            return Entradas[0] ^ Entradas[1]; // ^ significa Ou Exclusivo
         }
     }
 }

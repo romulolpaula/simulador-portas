@@ -55,7 +55,7 @@
                 VerticalAlignment="Top"
                 Width="110"
                 FontFamily="Century Gothic"
-                Background="Aquamarine" Height="25">
+                Background="Aquamarine" Height="25" Click="btnEntrar_Click">
 
             <Button.Template>
                 <ControlTemplate TargetType="Button">
