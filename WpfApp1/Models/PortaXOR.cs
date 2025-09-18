@@ -4,16 +4,18 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace WpfApp1.Classes
+namespace WpfApp1.Models
 {
     class PortaXOR : Portas
     {
         public override bool CalcularSaida()
         {
-            if (Entradas.Count != 2)
-                throw new ArgumentException("A Porta XOR só aceita duas entradas!");
-
-            return Entradas[0] ^ Entradas[1]; // ^ significa Ou Exclusivo
+            bool resultado = false;
+            foreach (bool entrada in Entradas)
+            {
+                resultado ^= entrada; 
+            }
+            return resultado;
         }
     }
 }

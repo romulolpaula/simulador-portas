@@ -6,9 +6,8 @@ using System.Threading.Tasks;
 
 namespace WpfApp1.Models
 {
-    public abstract class Portas
+    public class NorGate : GateModel
     {
-        public List<bool> Entradas { get; set; }
-        public abstract bool CalcularSaida();
+        protected override bool ComputeOutput() => !(Inputs.Count > 0 && Inputs.Any(i => i.Output));
     }
 }
