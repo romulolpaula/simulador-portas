@@ -18,7 +18,8 @@
         <Canvas x:Name="cnvSimulador" 
                 Background="#FFDADADA"
                 Margin="10"
-                Grid.Column="0" />
+                Grid.Column="0"
+                MouseLeftButtonDown="cnvSimulador_MouseLeftButtonDown"/>
 
         <!-- Menu lateral -->
         <StackPanel Grid.Column="1" Margin="10">
@@ -40,7 +41,7 @@
                       FontFamily="Century Gothic"
                       Background="White"
                       HorizontalAlignment="Center"
-                      Margin="0,0,0,10">
+                      Margin="0,0,0,10" SelectionChanged="cmbPorta_SelectionChanged">
                 <ComboBoxItem Content="Porta AND"/>
                 <ComboBoxItem Content="Porta NAND"/>
                 <ComboBoxItem Content="Porta OR"/>
