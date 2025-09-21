@@ -27,6 +27,13 @@ namespace WpfApp1.Controls
             InitializeComponent();
         }
 
+        public class InputPortClickedEventArgs : RoutedEventArgs
+        {
+            public int InputIndex { get; set; }
+
+            public InputPortClickedEventArgs(RoutedEvent routedEvent, object source) : base(routedEvent, source) { }
+        }
+
         public void Initialize(GateModel model, string imageFileName)
         {
             Model = model;
@@ -56,6 +63,6 @@ namespace WpfApp1.Controls
             "OutputPortClicked", RoutingStrategy.Bubble, typeof(RoutedEventHandler), typeof(GateControl));
 
         public static readonly RoutedEvent InputPortClickedEvent = EventManager.RegisterRoutedEvent(
-            "InputPortClicked",RountingStrategy.Bubble,typeof(RoutedEventHandler),typeof(GateControl));
+            "InputPortClicked",RoutingStrategy.Bubble,typeof(RoutedEventHandler),typeof(GateControl));
     }
 }
