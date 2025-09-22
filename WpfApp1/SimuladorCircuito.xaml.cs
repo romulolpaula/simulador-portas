@@ -14,6 +14,8 @@ using System.Windows.Shapes;
 using WpfApp1.Controls;
 using WpfApp1.Models;
 using WpfApp1.Services;
+using SharpVectors.Converters;
+using SharpVectors.Renderers.Wpf;
 
 namespace WpfApp1
 {
@@ -58,13 +60,13 @@ namespace WpfApp1
         //associa o tipo da porta à imagem correspondente 
         private string GetImageNameForGate(Type gateType) //função que mapeia o tipo da porta para o arquivo da imagem 
         {
-            if (gateType == typeof(AndGate)) return "and.png";
-            if (gateType == typeof(OrGate)) return "or.png";
-            if (gateType == typeof(NotGate)) return "not.png";
-            if (gateType == typeof(XorGate)) return "xor.png";
-            if (gateType == typeof(NandGate)) return "nand.png";
-            if (gateType == typeof(NorGate)) return "nor.png";
-            if (gateType == typeof(XnorGate)) return "xnor.png";
+            if (gateType == typeof(AndGate)) return "and.svg";
+            if (gateType == typeof(OrGate)) return "or.svg";
+            if (gateType == typeof(NotGate)) return "not.svg";
+            if (gateType == typeof(XorGate)) return "xor.svg";
+            if (gateType == typeof(NandGate)) return "nand.svg";
+            if (gateType == typeof(NorGate)) return "nor.svg";
+            if (gateType == typeof(XnorGate)) return "xnor.svg";
             return "default.png";
         }
 
@@ -153,6 +155,12 @@ namespace WpfApp1
         private void RefreshAllControls() //atualiza as portas 
         {
             foreach (var kv in modelToControl) kv.Value.UpdatePortVisuals();
+        }
+
+        public void EvaluateAndRefresh()
+        {
+            circuit.EvaluateAll(); //recalcula todo o circuito
+            RefreshAllControls(); //atualiza visual (cores das portas e linhas)
         }
     }
 }

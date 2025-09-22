@@ -11,9 +11,5 @@ namespace WpfApp1.Models
         public bool Value { get; set; }
         protected override bool ComputeOutput() => Value; //retorna o valor lógico definido para o nó de entrada
 
-        public override bool Evaluate(HashSet<Guid> visited)
-        {
-            return Value; //retorna o valor definido pelo usuário
-        }
     }
 }

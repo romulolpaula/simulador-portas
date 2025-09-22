@@ -10,7 +10,7 @@ namespace WpfApp1.Services
     public class CircuitManager
     {
         public List<GateModel> Gates { get; } = new List<GateModel>();
-        public List<Wire> Wires { get; } new List<Wire>();
+        public List<Wire> Wires { get; } = new List<Wire>();
 
         public void EvaluateAll()
         {

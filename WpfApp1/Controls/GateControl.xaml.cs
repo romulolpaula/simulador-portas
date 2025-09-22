@@ -1,5 +1,7 @@
-﻿using System;
+﻿using SharpVectors.Converters;
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -37,8 +39,30 @@ namespace WpfApp1.Controls
         public void Initialize(GateModel model, string imageFileName)
         {
             Model = model;
-            ImgGate.Source = new BitmapImage(new Uri($"pack://application:,,,/WpfApp1;component/Images/{imageFileName}"));
-            UpdatePortVisuals();
+
+            string imagePath = $"/WpfApp1;component/Images/{imageFileName}";
+            
+            if(File.Exists(imagePath) && imageFileName.EndsWith(".svg", StringComparison.OrdinalIgnoreCase))
+            {
+                SvgViewbox svg = new SvgViewbox
+                {
+                    Source = new Uri(imagePath, UriKind.Relative),
+                    Stretch = Stretch.Uniform,
+                    Width = ImgGate.Width,
+                    Height = ImgGate.Height
+                };
+
+                if (ImgGate.Parent is Grid parentGrid)
+                {
+                    parentGrid.Children.Remove(ImgGate);
+                    parentGrid.Children.Add(svg);
+                }
+            }
+            else if (File.Exists(imagePath))
+            {
+                ImgGate.Source = new BitmapImage(new Uri($"pack://application:,,,/WpfApp1;component/{imagePath}"));
+            }
+                UpdatePortVisuals();
         }
 
         public void UpdatePortVisuals()
