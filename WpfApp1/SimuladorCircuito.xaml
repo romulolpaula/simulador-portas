@@ -19,14 +19,7 @@
         <Canvas x:Name="cnvSimulador" 
                 Background="#FFDADADA"
                 Margin="10"
-                Grid.Column="0"
-                MouseLeftButtonDown="cnvSimulador_MouseLeftButtonDown">
-
-            <svgc:SvgViewbox Source="Images/and.svg"
-                            Canvas.Left="50"
-                            Canvas.Top="50"
-                            Width="100"
-                            Height="100"/>
+                Grid.Column="0">
 
         </Canvas>
 

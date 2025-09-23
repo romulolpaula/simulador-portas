@@ -1,150 +1,156 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using WpfApp1.Controls;
 using WpfApp1.Models;
-using WpfApp1.Services;
-using SharpVectors.Converters;
-using SharpVectors.Renderers.Wpf;
 
 namespace WpfApp1
 {
-    /// <summary>
-    /// Lógica interna para SimuladorCircuito.xaml
-    /// </summary>
     public partial class SimuladorCircuito : Window
     {
-        private CircuitManager circuit = new CircuitManager(); //guarda o modelo do circuito
-        private Type selectedGateType = null; //guarda o tipo de porta escolhida no ComboBox 
-        private Dictionary<GateModel, GateControl> modelToControl = new Dictionary<GateModel, GateControl>(); //liga cada modelo lógico (GateModel) ao seu controle visual (GateControl)
-        
+        private List<GateModel> gates = new List<GateModel>();
+        private Dictionary<GateModel, GateControl> modelToControl = new Dictionary<GateModel, GateControl>();
+        private Dictionary<InputNode, InputNodeControl> inputToControl = new Dictionary<InputNode, InputNodeControl>();
+        private object pendingSource = null; // Pode ser GateModel ou InputNode
+        private List<Line> uiWires = new List<Line>();
+
+        private double nextX = 20;
+        private double nextY = 20;
+        private const double offsetX = 150;
+        private const double offsetY = 150;
+
         public SimuladorCircuito()
         {
             InitializeComponent();
+            cnvSimulador.SizeChanged += (s, e) => LayoutAllGates();
         }
 
-        private void cnvSimulador_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) //adiciona porta ao clicar no canvas
+        // Adiciona porta automaticamente quando selecionada no ComboBox
+        private void cmbPorta_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (selectedGateType == null) return; //verifica se alguma porta foi escolhida
-
-            var pos = e.GetPosition(cnvSimulador);
-            GateModel model = (GateModel)Activator.CreateInstance(selectedGateType); //cria o modelo lógico da porta
-            circuit.Gates.Add(model);
-
-            var control = new GateControl(); //cria o controle visual e carrega a imagem correspondente
-            string imageName = GetImageNameForGate(selectedGateType);
-            control.Initialize(model, imageName);
-
-            //registra eventos de cliques nas portas
-            control.AddHandler(GateControl.OutputPortClickedEvent, new RoutedEventHandler(OnOutputPortClicked));
-            control.AddHandler(GateControl.InputPortClickedEvent, new RoutedEventHandler(OnInputPortClicked));
-
-            Canvas.SetLeft(control, pos.X - control.Width / 2); //posiciona a porta no canvas e adiciona ao dicionário
-            Canvas.SetTop(control, pos.Y - control.Height / 2);
-            cnvSimulador.Children.Add(control);
-
-            modelToControl[model] = control;
-            selectedGateType = null; //reseta depois de colocar pra não colocar várias portas sem querer
-        }
-
-        //associa o tipo da porta à imagem correspondente 
-        private string GetImageNameForGate(Type gateType) //função que mapeia o tipo da porta para o arquivo da imagem 
-        {
-            if (gateType == typeof(AndGate)) return "and.svg";
-            if (gateType == typeof(OrGate)) return "or.svg";
-            if (gateType == typeof(NotGate)) return "not.svg";
-            if (gateType == typeof(XorGate)) return "xor.svg";
-            if (gateType == typeof(NandGate)) return "nand.svg";
-            if (gateType == typeof(NorGate)) return "nor.svg";
-            if (gateType == typeof(XnorGate)) return "xnor.svg";
-            return "default.png";
-        }
-
-        private void cmbPorta_SelectionChanged(object sender, SelectionChangedEventArgs e) //detecta qual porta foi selecionada e guarda o tipo
-        {
-            if (cmbPorta.SelectedItem is System.Windows.Controls.ComboBoxItem item)
+            if (cmbPorta.SelectedItem is ComboBoxItem item)
             {
-                switch (item.Content.ToString())
+                Type gateType = item.Content.ToString() switch
                 {
-                    case "Porta AND": selectedGateType = typeof(AndGate); break;
-                    case "Porta NAND": selectedGateType = typeof(NandGate); break;
-                    case "Porta OR": selectedGateType = typeof(OrGate); break;
-                    case "Porta NOR": selectedGateType = typeof(NorGate); break;
-                    case "Porta XOR": selectedGateType = typeof(XorGate); break;
-                    case "Porta XNOR": selectedGateType = typeof(XnorGate); break;
-                    case "Porta NOT": selectedGateType = typeof(NotGate); break;
-                }
+                    "Porta AND" => typeof(AndGate),
+                    "Porta NAND" => typeof(NandGate),
+                    "Porta OR" => typeof(OrGate),
+                    "Porta NOR" => typeof(NorGate),
+                    "Porta XOR" => typeof(XorGate),
+                    "Porta XNOR" => typeof(XnorGate),
+                    "Porta NOT" => typeof(NotGate),
+                    _ => null
+                };
+
+                if (gateType != null)
+                    AddGateToCanvas(gateType);
+
+                cmbPorta.SelectedIndex = -1;
             }
         }
 
-        private GateModel pendingSource = null; //guarda a porta de onde vai sair o fio 
-        private List<Line> uiWires = new List<Line>(); //lista de fios desenhados no canvas
-
-        private void OnOutputPortClicked(object sender, RoutedEventArgs e) //marca a porta clicada como fonte do fio
+        private void AddGateToCanvas(Type gateType)
         {
-            var control = (GateControl)sender;
-            pendingSource = control.Model;
+            GateModel model = (GateModel)Activator.CreateInstance(gateType);
+            gates.Add(model);
+
+            var control = new GateControl();
+            string imageName = GetImageNameForGate(gateType);
+            control.Initialize(model, imageName);
+
+            control.AddHandler(GateControl.OutputPortClickedEvent, new RoutedEventHandler(OnOutputPortClicked));
+            control.AddHandler(GateControl.InputPortClickedEvent, new RoutedEventHandler(OnInputPortClicked));
+
+            PositionNextGate(control);
+
+            cnvSimulador.Children.Add(control);
+            modelToControl[model] = control;
+
+            RefreshAllControls();
+        }
+
+        // Adiciona InputNode manualmente
+        private void AddInputNode(InputNode inputNode)
+        {
+            var control = new InputNodeControl();
+            control.Initialize(inputNode);
+
+            PositionNextGate(control);
+
+            cnvSimulador.Children.Add(control);
+            inputToControl[inputNode] = control;
+        }
+
+        private void PositionNextGate(UserControl control)
+        {
+            double maxX = cnvSimulador.ActualWidth - control.Width - 10;
+            double maxY = cnvSimulador.ActualHeight - control.Height - 10;
+
+            if (nextX > maxX)
+            {
+                nextX = 20;
+                nextY += offsetY;
+            }
+            if (nextY > maxY)
+                nextY = 20;
+
+            Canvas.SetLeft(control, nextX);
+            Canvas.SetTop(control, nextY);
+
+            nextX += offsetX;
+        }
+
+        private void OnOutputPortClicked(object sender, RoutedEventArgs e)
+        {
+            var control = sender as UserControl;
+            if (control is GateControl gc) pendingSource = gc.Model;
+            else if (control is InputNodeControl ic) pendingSource = ic.Model;
         }
 
         private void OnInputPortClicked(object sender, RoutedEventArgs e)
         {
-            if (pendingSource == null) return; //verifica se já tem uma fonte
+            if (pendingSource == null) return;
 
-            var args = (GateControl.InputPortClickedEventArgs)e;
-            var control = (GateControl)sender;
+            var args = e as GateControl.InputPortClickedEventArgs;
+            var control = sender as GateControl;
             var target = control.Model;
 
-            if (pendingSource == target) { pendingSource = null; return; } //evita loop
+            if (pendingSource == target) { pendingSource = null; return; }
 
-            target.Inputs.Add(pendingSource); //conecta a saída na entrada clicada 
+            // Conecta modelo lógico
+            target.Inputs.Add(pendingSource as GateModel ?? throw new InvalidOperationException("InputNode não conectado a porta"));
 
-            var line = new Line //desenha fio visual
+            // Cria linha visual
+            Line line = new Line
             {
                 Stroke = Brushes.Black,
                 StrokeThickness = 2,
+                Tag = Tuple.Create(pendingSource, target, args.InputIndex)
             };
-            UpdateLinePositions(line, pendingSource, target, args.InputIndex);
-
-            Canvas.SetZIndex(line, 0);
             cnvSimulador.Children.Add(line);
             uiWires.Add(line);
 
-            circuit.EvaluateAll(); //recalcula todo o circuito
-            RefreshAllControls(); //atualiza as cores das portas 
+            UpdateLinePositions(line, pendingSource, target, args.InputIndex);
 
-            pendingSource = null; //reseta
+            EvaluateAll();
+
+            pendingSource = null;
         }
 
-        //calcula coordenadas de saída e entrada 
-        private void UpdateLinePositions(Line line, GateModel source, GateModel target, int inputIndex)
+        private void UpdateLinePositions(Line line, object source, object target, int inputIndex)
         {
-            var sCtrl = modelToControl[source];
-            var tCtrl = modelToControl[target];
+            UserControl sCtrl = GetControlForOutput(source);
+            UserControl tCtrl = GetControlForInput(target);
 
-            //ponto de saída
-            var sPoint = sCtrl.TranslatePoint(
-                new Point(sCtrl.Output.Width / 2 + Canvas.GetLeft(sCtrl.Output),
-                           sCtrl.Output.Height / 2 + Canvas.GetTop(sCtrl.Output)), 
-                cnvSimulador
-            );
+            if (sCtrl == null || tCtrl == null) return;
 
-            //ponto de entrada
-            Ellipse inputEllipse = inputIndex == 0 ? tCtrl.Input0 : tCtrl.Input1;
-            var tPoint = tCtrl.TranslatePoint(
-                new Point(inputEllipse.Width / 2 + Canvas.GetLeft(inputEllipse),
-                          inputEllipse.Height / 2 + Canvas.GetTop(inputEllipse)),
-                cnvSimulador
-               );
+            var sPoint = sCtrl.TranslatePoint(new Point(GetOutputEllipse(sCtrl).Width / 2, GetOutputEllipse(sCtrl).Height / 2), cnvSimulador);
+            var tEllipse = GetInputEllipse(tCtrl, inputIndex);
+            var tPoint = tCtrl.TranslatePoint(new Point(tEllipse.Width / 2, tEllipse.Height / 2), cnvSimulador);
 
             line.X1 = sPoint.X;
             line.Y1 = sPoint.Y;
@@ -152,15 +158,74 @@ namespace WpfApp1
             line.Y2 = tPoint.Y;
         }
 
-        private void RefreshAllControls() //atualiza as portas 
+        private UserControl GetControlForOutput(object obj) =>
+            obj switch
+            {
+                GateModel gm when modelToControl.ContainsKey(gm) => modelToControl[gm],
+                InputNode inp when inputToControl.ContainsKey(inp) => inputToControl[inp],
+                _ => null
+            };
+
+        private UserControl GetControlForInput(object obj) =>
+            obj switch
+            {
+                GateModel gm when modelToControl.ContainsKey(gm) => modelToControl[gm],
+                _ => null
+            };
+
+        private Ellipse GetOutputEllipse(UserControl ctrl) =>
+            ctrl is GateControl gc ? gc.Output : (ctrl as InputNodeControl)?.Output;
+
+        private Ellipse GetInputEllipse(UserControl ctrl, int index) =>
+            ctrl is GateControl gc ? (index == 0 ? gc.Input0 : gc.Input1) : null;
+
+        public void EvaluateAll()
         {
-            foreach (var kv in modelToControl) kv.Value.UpdatePortVisuals();
+            foreach (var gate in gates)
+                gate.Evaluate();
+
+            RefreshAllControls();
         }
 
-        public void EvaluateAndRefresh()
+        private void RefreshAllControls()
         {
-            circuit.EvaluateAll(); //recalcula todo o circuito
-            RefreshAllControls(); //atualiza visual (cores das portas e linhas)
+            foreach (var kv in modelToControl)
+                kv.Value.UpdatePortVisuals();
+
+            foreach (var line in uiWires)
+            {
+                if (line.Tag is Tuple<object, object, int> tag)
+                    UpdateLinePositions(line, tag.Item1, tag.Item2, tag.Item3);
+            }
+        }
+
+        private void LayoutAllGates()
+        {
+            nextX = 20;
+            nextY = 20;
+
+            foreach (var kv in modelToControl)
+                PositionNextGate(kv.Value);
+
+            foreach (var kv in inputToControl)
+                PositionNextGate(kv.Value);
+
+            RefreshAllControls();
+        }
+
+        private string GetImageNameForGate(Type gateType)
+        {
+            return gateType switch
+            {
+                Type t when t == typeof(AndGate) => "and.svg",
+                Type t when t == typeof(OrGate) => "or.svg",
+                Type t when t == typeof(NotGate) => "not.svg",
+                Type t when t == typeof(XorGate) => "xor.svg",
+                Type t when t == typeof(NandGate) => "nand.svg",
+                Type t when t == typeof(NorGate) => "nor.svg",
+                Type t when t == typeof(XnorGate) => "xnor.svg",
+                _ => "default.png"
+            };
         }
     }
 }

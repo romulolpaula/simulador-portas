@@ -1,5 +1,4 @@
-﻿using System;
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -36,8 +35,7 @@ namespace WpfApp1.Controls
 
         private void CircuitUpdated()
         {
-            // dispara reavaliação do circuito
-            (Application.Current.MainWindow as SimuladorCircuito)?.EvaluateAndRefresh();
+            (Application.Current.MainWindow as SimuladorCircuito)?.EvaluateAll();
         }
 
         public void UpdateVisual()
@@ -45,7 +43,6 @@ namespace WpfApp1.Controls
             Output.Fill = Model.Output ? Brushes.Green : Brushes.Gray;
         }
 
-        // evento de clique na saída (igual GateControl)
         private void OutputPort_MouseDown(object sender, MouseButtonEventArgs e)
             => RaiseEvent(new RoutedEventArgs(OutputPortClickedEvent, this));
 
