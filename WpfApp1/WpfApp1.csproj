@@ -9,18 +9,51 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="Images\and.png" />
+    <None Remove="Images\and.svg" />
+    <None Remove="Images\bolina.svg" />
+    <None Remove="Images\linha.svg" />
+    <None Remove="Images\nand.svg" />
+    <None Remove="Images\nor.svg" />
+    <None Remove="Images\not.svg" />
+    <None Remove="Images\or.svg" />
+    <None Remove="Images\xnor.svg" />
+    <None Remove="Images\xor.svg" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.9" />
     <PackageReference Include="Microsoft.Data.Sqlite.Core" Version="9.0.9" />
+    <PackageReference Include="SharpVectors" Version="1.8.5" />
     <PackageReference Include="SharpVectors.Wpf" Version="1.8.5" />
   </ItemGroup>
 
   <ItemGroup>
-    <Resource Include="Images\and.png">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    <Resource Include="Images\and.svg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Images\bolina.svg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Images\linha.svg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Images\nand.svg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Images\nor.svg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Images\not.svg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Images\or.svg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Images\xnor.svg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Images\xor.svg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Resource>
   </ItemGroup>
 
