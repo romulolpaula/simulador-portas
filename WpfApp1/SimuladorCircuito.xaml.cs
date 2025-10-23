@@ -16,7 +16,7 @@ namespace WpfApp1
         private Dictionary<GateModel, GateControl> modelToControl = new Dictionary<GateModel, GateControl>();
         private Dictionary<InputNode, InputNodeControl> inputToControl = new Dictionary<InputNode, InputNodeControl>();
         private object pendingSource = null; // Pode ser GateModel ou InputNode
-        private List<Line> uiWires = new List<Line>();
+        private List<Wire> wires = new List<Wire>();
 
         private double nextX = 20;
         private double nextY = 20;
@@ -121,41 +121,33 @@ namespace WpfApp1
 
             if (pendingSource == target) { pendingSource = null; return; }
 
+            
+            // Cria linha visual
+            var wire = new Wire(pendingSource as GateModel, target, args.InputIndex);
+            wires.Add(wire);
+            cnvSimulador.Children.Add(wire.LineShape);
+
             // Conecta modelo lógico
             target.Inputs.Add(pendingSource as GateModel ?? throw new InvalidOperationException("InputNode não conectado a porta"));
 
-            // Cria linha visual
-            Line line = new Line
-            {
-                Stroke = Brushes.Black,
-                StrokeThickness = 2,
-                Tag = Tuple.Create(pendingSource, target, args.InputIndex)
-            };
-            cnvSimulador.Children.Add(line);
-            uiWires.Add(line);
-
-            UpdateLinePositions(line, pendingSource, target, args.InputIndex);
-
+            UpdateWirePosition(wire);
             EvaluateAll();
 
             pendingSource = null;
         }
 
-        private void UpdateLinePositions(Line line, object source, object target, int inputIndex)
+        private void UpdateWirePosition(Wire wire)
         {
-            UserControl sCtrl = GetControlForOutput(source);
-            UserControl tCtrl = GetControlForInput(target);
+            UserControl sCtrl = GetControlForOutput(wire.Source);
+            UserControl tCtrl = GetControlForInput(wire.Target);
 
             if (sCtrl == null || tCtrl == null) return;
 
             var sPoint = sCtrl.TranslatePoint(new Point(GetOutputEllipse(sCtrl).Width / 2, GetOutputEllipse(sCtrl).Height / 2), cnvSimulador);
-            var tEllipse = GetInputEllipse(tCtrl, inputIndex);
+            var tEllipse = GetInputEllipse(tCtrl, wire.TargetInputIndex);
             var tPoint = tCtrl.TranslatePoint(new Point(tEllipse.Width / 2, tEllipse.Height / 2), cnvSimulador);
 
-            line.X1 = sPoint.X;
-            line.Y1 = sPoint.Y;
-            line.X2 = tPoint.X;
-            line.Y2 = tPoint.Y;
+            wire.UpdatePosition(sPoint.X, sPoint.Y, tPoint.X, tPoint.Y);
         }
 
         private UserControl GetControlForOutput(object obj) =>
@@ -192,10 +184,10 @@ namespace WpfApp1
             foreach (var kv in modelToControl)
                 kv.Value.UpdatePortVisuals();
 
-            foreach (var line in uiWires)
+            foreach (var wire in wires)
             {
-                if (line.Tag is Tuple<object, object, int> tag)
-                    UpdateLinePositions(line, tag.Item1, tag.Item2, tag.Item3);
+                UpdateWirePosition(wire);
+                wire.UpdateColor(wire.Source?.Output ?? false);
             }
         }
 
