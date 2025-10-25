@@ -138,16 +138,22 @@ namespace WpfApp1
 
         private void UpdateWirePosition(Wire wire)
         {
-            UserControl sCtrl = GetControlForOutput(wire.Source);
-            UserControl tCtrl = GetControlForInput(wire.Target);
+            var sourceCtrl = GetControlForOutput(wire.Source);
+            var targetCtrl = GetControlForInput(wire.Target);
 
-            if (sCtrl == null || tCtrl == null) return;
+            if (sourceCtrl == null || targetCtrl == null) return;
 
-            var sPoint = sCtrl.TranslatePoint(new Point(GetOutputEllipse(sCtrl).Width / 2, GetOutputEllipse(sCtrl).Height / 2), cnvSimulador);
-            var tEllipse = GetInputEllipse(tCtrl, wire.TargetInputIndex);
-            var tPoint = tCtrl.TranslatePoint(new Point(tEllipse.Width / 2, tEllipse.Height / 2), cnvSimulador);
+            var sourceEllipse = GetOutputEllipse(sourceCtrl);
+            var targetEllipse = GetInputEllipse(targetCtrl, wire.TargetInputIndex);
 
-            wire.UpdatePosition(sPoint.X, sPoint.Y, tPoint.X, tPoint.Y);
+            if (sourceEllipse == null || targetEllipse == null) return;
+
+            var sourcePoint = sourceCtrl.TranslatePoint(
+                new Point(sourceEllipse.Width / 2, sourceEllipse.Height / 2), cnvSimulador);
+            var targetPoint = targetCtrl.TranslatePoint(
+                new Point(targetEllipse.Width / 2, targetEllipse.Height / 2), cnvSimulador);
+
+            wire.UpdatePosition(sourcePoint.X, sourcePoint.Y, targetPoint.X, targetPoint.Y);
         }
 
         private UserControl GetControlForOutput(object obj) =>
