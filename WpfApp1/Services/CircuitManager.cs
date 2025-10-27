@@ -27,9 +27,9 @@ namespace WpfApp1.Services
 
             visited.Add(current);
 
-            foreach (var outputWire in current.OutputWires)
+            foreach (var wire in Wires.Where(w => w.Source == current))
             {
-                if (HasPathToSource(outputWire.Target, target, visited))
+                if (HasPathToSource(wire.Target, target, visited))
                     return true;
             }
 

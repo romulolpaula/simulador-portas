@@ -121,7 +121,15 @@ namespace WpfApp1
 
             if (pendingSource == target) { pendingSource = null; return; }
 
-            
+            // Verifica ciclo antes de criar a conexão
+            var sourceGate = pendingSource as GateModel;
+            if(sourceGate != null && CreatesCycle(sourceGate, target))
+            {
+                MessageBox.Show("Conexão inválida! Essa ação criaria um ciclo no circuito.", "Erro", MessageBoxButton.OK, MessageBoxImage.Warning);
+                pendingSource = null;
+                return;
+            }
+
             // Cria linha visual
             var wire = new Wire(pendingSource as GateModel, target, args.InputIndex);
             wires.Add(wire);
@@ -224,6 +232,30 @@ namespace WpfApp1
                 Type t when t == typeof(XnorGate) => "xnor.svg",
                 _ => "default.png"
             };
+        }
+
+        private bool CreatesCycle(GateModel source, GateModel target)
+        {
+            if (source == null || target == null) return false; //evita nulos
+
+            if (source == target) return true; //se a saída for ligada de volta a propria entrada, autoloop
+
+            HashSet<GateModel> visited = new HashSet<GateModel>(); //faz uma busca recursiva nas entradas do target
+            return HasPath(target, source, visited);
+        }
+
+        private bool HasPath(GateModel current, GateModel target, HashSet<GateModel> visited)
+        {
+            if (current == null || visited.Contains(current)) return false;
+
+            visited.Add(current);
+
+            foreach (var input in current.Inputs)
+            {
+                if (input == target) return true;
+                if (HasPath(input, target, visited)) return true;
+            }
+            return false;
         }
     }
 }
