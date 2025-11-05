@@ -50,6 +50,9 @@
                 <ComboBoxItem Content="Porta NOR"/>
                 <ComboBoxItem Content="Porta XOR"/>
                 <ComboBoxItem Content="Porta XNOR"/>
+                <Separator/>
+                <ComboBoxItem Content="Entrada"/>
+                <ComboBoxItem Content="Saída"/>
             </ComboBox>
 
             <Button x:Name="btnSalvar" 

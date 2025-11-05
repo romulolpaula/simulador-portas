@@ -34,24 +34,40 @@ namespace WpfApp1
         {
             if (cmbPorta.SelectedItem is ComboBoxItem item)
             {
-                Type gateType = item.Content.ToString() switch
-                {
-                    "Porta AND" => typeof(AndGate),
-                    "Porta NAND" => typeof(NandGate),
-                    "Porta OR" => typeof(OrGate),
-                    "Porta NOR" => typeof(NorGate),
-                    "Porta XOR" => typeof(XorGate),
-                    "Porta XNOR" => typeof(XnorGate),
-                    "Porta NOT" => typeof(NotGate),
-                    _ => null
-                };
+                string selected = item.Content.ToString();
 
-                if (gateType != null)
-                    AddGateToCanvas(gateType);
+                if (selected == "Entrada")
+                {
+                    var inputNode = new InputNode();
+                    AddInputNode(inputNode);
+                }
+                else if (selected == "Saída")
+                {
+                    var outputNode = new OutputNode();
+                    AddOutputNode(outputNode);
+                }
+                else
+                {
+                    Type gateType = selected switch
+                    {
+                        "Porta AND" => typeof(AndGate),
+                        "Porta NAND" => typeof(NandGate),
+                        "Porta OR" => typeof(OrGate),
+                        "Porta NOR" => typeof(NorGate),
+                        "Porta XOR" => typeof(XorGate),
+                        "Porta XNOR" => typeof(XnorGate),
+                        "Porta NOT" => typeof(NotGate),
+                        _ => null
+                    };
+
+                    if (gateType != null)
+                        AddGateToCanvas(gateType);
+                }
 
                 cmbPorta.SelectedIndex = -1;
             }
         }
+
 
         private void AddGateToCanvas(Type gateType)
         {
@@ -103,23 +119,40 @@ namespace WpfApp1
             inputToControl[inputNode] = control;
         }
 
+        private void AddOutputNode(OutputNode outputNode)
+        {
+            var control = new OutputNodeControl();
+            control.Initialize(outputNode);
+
+            PositionNextGate(control);
+
+            cnvSimulador.Children.Add(control);
+        }
+
+        private double currentX = 20;
+        private double currentY = 20;
+        private const double espacoHorizontal = 140;
+        private const double espacoVertical = 100;
+        private const double larguraMaxima = 650;
         private void PositionNextGate(UserControl control)
         {
-            double maxX = cnvSimulador.ActualWidth - control.Width - 10;
-            double maxY = cnvSimulador.ActualHeight - control.Height - 10;
+            double baseY = cnvSimulador.Children.Count * 80 + 50;
 
-            if (nextX > maxX)
+            if (control is InputNodeControl)
             {
-                nextX = 20;
-                nextY += offsetY;
+                Canvas.SetLeft(control, 50);
+                Canvas.SetTop(control, baseY);
             }
-            if (nextY > maxY)
-                nextY = 20;
-
-            Canvas.SetLeft(control, nextX);
-            Canvas.SetTop(control, nextY);
-
-            nextX += offsetX;
+            else if (control is OutputNodeControl)
+            {
+                Canvas.SetLeft(control, cnvSimulador.ActualWidth - control.Width - 80);
+                Canvas.SetTop(control, baseY);
+            }
+            else // Portas lógicas
+            {
+                Canvas.SetLeft(control, cnvSimulador.ActualWidth / 2 - control.Width / 2);
+                Canvas.SetTop(control, baseY);
+            }
         }
 
         private void OnOutputPortClicked(object sender, RoutedEventArgs e)
@@ -312,6 +345,24 @@ namespace WpfApp1
                 if (HasPath(input, target, visited)) return true;
             }
             return false;
+        }
+
+        public void IniciarLigacao(GateModel node, string tipo)
+        {
+            if (tipo == "output")
+            {
+                pendingSource = node;
+            }
+            else if (tipo == "input" && pendingSource != null)
+            {
+                var wire = new Wire(pendingSource as GateModel, node, 0);
+                wires.Add(wire);
+                cnvSimulador.Children.Add(wire.LineShape);
+                UpdateWirePosition(wire);
+                EvaluateAll();
+
+                pendingSource = null;
+            }
         }
     }
 }
