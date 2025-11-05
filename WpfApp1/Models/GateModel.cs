@@ -14,7 +14,7 @@ namespace WpfApp1.Models
 
         protected abstract bool ComputeOutput(); 
 
-        public bool Evaluate(HashSet<Guid> visited = null) //método que avalia a saída da porta recursivamente
+        public virtual bool Evaluate(HashSet<Guid> visited = null) //método que avalia a saída da porta recursivamente
         {
             if (visited == null) visited = new HashSet<Guid>();
             if (visited.Contains(Id)) throw new InvalidOperationException("Ciclo detectado"); //verifica se o Id da porta já foi visitado, se sim, lança uma exceção indicando que há um ciclo

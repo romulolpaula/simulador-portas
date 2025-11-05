@@ -68,8 +68,26 @@ namespace WpfApp1
             PositionNextGate(control);
 
             cnvSimulador.Children.Add(control);
+            control.LayoutUpdated += (s, ev) => {
+                // small optimization: você pode checar se realmente mudou posição antes de refrescar tudo
+                RefreshAllControls();
+            };
+
             modelToControl[model] = control;
 
+            if (gates.Count > 1)
+            {
+                var source = gates[gates.Count - 2];
+                var target = gates[gates.Count - 1];
+
+                var wire = new Wire(source, target, 0);//conecta a saída do gate anterior à entrada do novo gate
+                wires.Add(wire);
+                cnvSimulador.Children.Add(wire.LineShape);
+
+                UpdateWirePosition(wire);
+                EvaluateAll();
+
+            }
             RefreshAllControls();
         }
 
@@ -119,28 +137,43 @@ namespace WpfApp1
             var control = sender as GateControl;
             var target = control.Model;
 
-            if (pendingSource == target) { pendingSource = null; return; }
-
-            // Verifica ciclo antes de criar a conexão
-            var sourceGate = pendingSource as GateModel;
-            if(sourceGate != null && CreatesCycle(sourceGate, target))
+            // Evita conectar uma porta a ela mesma
+            if (pendingSource == target)
             {
-                MessageBox.Show("Conexão inválida! Essa ação criaria um ciclo no circuito.", "Erro", MessageBoxButton.OK, MessageBoxImage.Warning);
                 pendingSource = null;
                 return;
             }
 
-            // Cria linha visual
-            var wire = new Wire(pendingSource as GateModel, target, args.InputIndex);
+            // Verifica ciclo antes de criar a conexão
+            var sourceGate = pendingSource as GateModel;
+            if (sourceGate != null && CreatesCycle(sourceGate, target))
+            {
+                MessageBox.Show("Conexão inválida! Essa ação criaria um ciclo no circuito.",
+                    "Erro", MessageBoxButton.OK, MessageBoxImage.Warning);
+                pendingSource = null;
+                return;
+            }
+
+            //Cria o fio (Wire) e adiciona ao Canvas antes de posicionar
+            var wire = new Wire(sourceGate, target, args.InputIndex);
             wires.Add(wire);
             cnvSimulador.Children.Add(wire.LineShape);
 
-            // Conecta modelo lógico
-            target.Inputs.Add(pendingSource as GateModel ?? throw new InvalidOperationException("InputNode não conectado a porta"));
+            //Conecta o modelo lógico
+            if (pendingSource is GateModel gm)
+                target.Inputs.Add(gm);
+            else
+                throw new InvalidOperationException("InputNode não conectado a porta");
 
-            UpdateWirePosition(wire);
-            EvaluateAll();
+            //Atualiza posição do fio após o layout do WPF estar pronto
+            // (evita o bug da linha aparecendo no topo)
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                UpdateWirePosition(wire);
+                EvaluateAll(); // Atualiza saídas e cores das linhas
+            }), System.Windows.Threading.DispatcherPriority.Loaded);
 
+            //Limpa seleção de origem
             pendingSource = null;
         }
 
@@ -154,14 +187,37 @@ namespace WpfApp1
             var sourceEllipse = GetOutputEllipse(sourceCtrl);
             var targetEllipse = GetInputEllipse(targetCtrl, wire.TargetInputIndex);
 
-            if (sourceEllipse == null || targetEllipse == null) return;
+            Point sourcePoint;
+            if (sourceEllipse != null)
+            {
+                // Traduz o ponto a partir da própria bolinha (correto)
+                sourcePoint = sourceEllipse.TranslatePoint(
+                    new Point(sourceEllipse.Width / 2, sourceEllipse.Height / 2),
+                    cnvSimulador);
+            }
+            else
+            {
+                sourcePoint = sourceCtrl.TranslatePoint(
+                    new Point(sourceCtrl.ActualWidth / 2, sourceCtrl.ActualHeight / 2),
+                    cnvSimulador);
+            }
 
-            var sourcePoint = sourceCtrl.TranslatePoint(
-                new Point(sourceEllipse.Width / 2, sourceEllipse.Height / 2), cnvSimulador);
-            var targetPoint = targetCtrl.TranslatePoint(
-                new Point(targetEllipse.Width / 2, targetEllipse.Height / 2), cnvSimulador);
+            Point targetPoint;
+            if (targetEllipse != null)
+            {
+                targetPoint = targetEllipse.TranslatePoint(
+                    new Point(targetEllipse.Width / 2, targetEllipse.Height / 2),
+                    cnvSimulador);
+            }
+            else
+            {
+                targetPoint = targetCtrl.TranslatePoint(
+                    new Point(targetCtrl.ActualWidth / 2, targetCtrl.ActualHeight / 2),
+                    cnvSimulador);
+            }
 
             wire.UpdatePosition(sourcePoint.X, sourcePoint.Y, targetPoint.X, targetPoint.Y);
+
         }
 
         private UserControl GetControlForOutput(object obj) =>
@@ -198,7 +254,7 @@ namespace WpfApp1
             foreach (var kv in modelToControl)
                 kv.Value.UpdatePortVisuals();
 
-            foreach (var wire in wires)
+            foreach (var wire in wires) //reposiciona e recolore todos os fios
             {
                 UpdateWirePosition(wire);
                 wire.UpdateColor(wire.Source?.Output ?? false);
