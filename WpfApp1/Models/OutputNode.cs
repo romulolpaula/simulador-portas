@@ -5,6 +5,7 @@ namespace WpfApp1.Models
 {
     public class OutputNode : GateModel
     {
+        public GateModel Source { get; set; }
         public override bool Evaluate(HashSet<Guid> visited)
         {
             if (Inputs.Count > 0)

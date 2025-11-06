@@ -15,6 +15,7 @@ namespace WpfApp1.Models
         public GateModel Target { get; set; }
         public int TargetInputIndex { get; set; } //se quiser indexar entradas específicas em portas com múltiplas entradas
 
+        public bool Auto { get; set; } = false; //indica se o fio é automático (criado pelo sistema) ou manual (criado pelo usuário)
         public Line LineShape { get; private set; } //linha desenhada no canvas
         public Brush ActiveColor { get; set; } = Brushes.LimeGreen; //cor quando o fio está ativo (lógico 1)
         public Brush InactiveColor { get; set; } = Brushes.Gray; //cor quando o fio está inativo (lógico 0)

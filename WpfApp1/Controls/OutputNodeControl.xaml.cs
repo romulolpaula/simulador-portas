@@ -10,6 +10,8 @@ namespace WpfApp1.Controls
     {
         private OutputNode _node;
 
+        public OutputNode Model { get; private set; }
+
         public OutputNodeControl()
         {
             InitializeComponent();
@@ -17,6 +19,7 @@ namespace WpfApp1.Controls
 
         public void Initialize(OutputNode node)
         {
+            Model = Model;
             _node = node;
             UpdateDisplay();
         }

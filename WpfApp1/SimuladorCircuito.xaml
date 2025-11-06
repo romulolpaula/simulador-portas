@@ -79,6 +79,15 @@
                     Background="#FFEAEAEA" 
                     BorderBrush="#FFACACAC"
                     Margin="0,0,0,10"/>
+            <Button x:Name="btnOrganizar" 
+                    Width="150"
+                    Content="Organizar Circuito"
+                    FontSize="10"
+                    FontFamily="Century Gothic"
+                    Background="#FFEAEAEA" 
+                    BorderBrush="#FFACACAC"
+                    Margin="0,0,0,10"
+                    Click="btnOrganizar_Click"/>
         </StackPanel>
     </Grid>
 </Window>
