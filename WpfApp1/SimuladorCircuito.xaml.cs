@@ -416,11 +416,19 @@ namespace WpfApp1
         {
             var wire = new Wire(source, target, targetIndex)
             {
-                Auto = true 
+                Auto = true
             };
+
+            // Conecta o modelo lógico (isso garante que o sinal passe de uma porta pra outra)
+            if (source != null && target != null && !target.Inputs.Contains(source))
+                target.Inputs.Add(source);
 
             wires.Add(wire);
             cnvSimulador.Children.Add(wire.LineShape);
+
+            UpdateWirePosition(wire);
+            EvaluateAll(); // Recalcula as saídas do circuito
+
             return wire;
         }
 
@@ -437,14 +445,14 @@ namespace WpfApp1
             var saidas = outputToControl.Values.ToList();
             var portas = modelToControl.Values.ToList();
 
-            // 1️⃣ Posiciona as entradas à esquerda
+            // Posiciona as entradas à esquerda
             for (int i = 0; i < entradas.Count; i++)
             {
                 Canvas.SetLeft(entradas[i], startX);
                 Canvas.SetTop(entradas[i], startY + i * offsetY);
             }
 
-            // 2️⃣ Posiciona as portas lógicas no meio (em várias colunas)
+            // Posiciona as portas lógicas no meio (em várias colunas)
             int col = 0, row = 0;
             double midStartX = startX + offsetX;
             foreach (var porta in portas)
@@ -460,7 +468,7 @@ namespace WpfApp1
                 }
             }
 
-            // 3️⃣ Posiciona as saídas à direita
+            // Posiciona as saídas à direita
             double rightX = startX + offsetX * (col + 1);
             for (int i = 0; i < saidas.Count; i++)
             {
@@ -468,18 +476,21 @@ namespace WpfApp1
                 Canvas.SetTop(saidas[i], startY + i * offsetY);
             }
 
-            // 4️⃣ Reconecta automaticamente (Entrada → Portas → Saída)
+            // Reconecta automaticamente (Entrada → Portas → Saída)
             wires.Clear();
             cnvSimulador.Children.OfType<Line>().ToList().ForEach(l => cnvSimulador.Children.Remove(l));
 
             if (entradas.Count > 0 && portas.Count > 0)
             {
-                // Liga cada entrada à primeira porta
-                foreach (var entrada in entradas)
+                // Liga cada entrada a uma porta diferente, se possível
+                for (int i = 0; i < entradas.Count; i++)
                 {
+                    var entrada = entradas[i];
+                    var destinoIndex = i % portas.Count; // se houver mais entradas que portas, ele reaproveita
+
                     CreateWireBetween(
                         GetModelFromControl((FrameworkElement)entrada),
-                        GetModelFromControl((FrameworkElement)portas[0])
+                        GetModelFromControl((FrameworkElement)portas[destinoIndex])
                     );
                 }
             }
