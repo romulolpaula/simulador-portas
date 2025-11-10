@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -104,10 +105,14 @@ namespace WpfApp1
         }
 
         // Adiciona InputNode manualmente
+        // Adiciona InputNode manualmente
         private void AddInputNode(InputNode inputNode)
         {
             var control = new InputNodeControl();
             control.Initialize(inputNode);
+
+            // registra o evento de click na saída para iniciar ligação
+            control.AddHandler(InputNodeControl.OutputPortClickedEvent, new RoutedEventHandler(OnOutputPortClicked));
 
             PositionNextGate(control);
 
@@ -115,15 +120,21 @@ namespace WpfApp1
             inputToControl[inputNode] = control;
         }
 
+        // Adiciona OutputNode manualmente
         private void AddOutputNode(OutputNode outputNode)
         {
             var control = new OutputNodeControl();
             control.Initialize(outputNode);
 
+            // registra handler caso queira permitir ligar entradas diretamente a saída por clique
+            control.AddHandler(OutputNodeControl.InputPortClickedEvent, new RoutedEventHandler(OnInputPortClicked));
+
             PositionNextGate(control);
 
             cnvSimulador.Children.Add(control);
+            outputToControl[outputNode] = control;
         }
+
 
         private double currentX = 20;
         private double currentY = 20;
@@ -201,9 +212,18 @@ namespace WpfApp1
 
             //Conecta o modelo lógico
             if (pendingSource is GateModel gm)
+            {
                 target.Inputs.Add(gm);
+            }
+            else if (pendingSource is InputNode inp)
+            {
+                target.Inputs.Add(new InputGateAdapter(inp)); // cria adaptador lógico
+            }
             else
-                throw new InvalidOperationException("InputNode não conectado a porta");
+            {
+                MessageBox.Show("Conexão inválida!", "Erro", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+
 
             //Atualiza posição do fio após o layout do WPF estar pronto
             // (evita o bug da linha aparecendo no topo)
@@ -283,11 +303,54 @@ namespace WpfApp1
 
         public void EvaluateAll()
         {
-            foreach (var gate in gates)
-                gate.Evaluate();
+            // Conjunto de nós já visitados (evita recursões infinitas)
+            var visited = new HashSet<Guid>();
 
+            // Avalia todas as entradas (InputNode)
+            foreach (var input in inputToControl.Keys)
+            {
+                try
+                {
+                    input.Evaluate(visited);
+                }
+                catch
+                {
+                    // Caso o método Evaluate não aceite parâmetros, usa a sobrecarga sem HashSet
+                    try { input.Evaluate(new HashSet<Guid>()); } catch { }
+                }
+            }
+
+            // Avalia todas as portas lógicas (AND, OR, NOT, etc.)
+            foreach (var gate in gates)
+            {
+                try
+                {
+                    gate.Evaluate(visited);
+                }
+                catch
+                {
+                    try { gate.Evaluate(); } catch { }
+                }
+            }
+
+            // Avalia todas as saídas (OutputNode)
+            foreach (var output in outputToControl.Keys)
+            {
+                try
+                {
+                    output.Evaluate(visited);
+                }
+                catch
+                {
+                    try { output.Evaluate(new HashSet<Guid>()); } catch { }
+                }
+            }
+
+            // Atualiza os controles visuais (cores, estados, etc.)
             RefreshAllControls();
         }
+
+
 
         private void RefreshAllControls()
         {
@@ -414,6 +477,13 @@ namespace WpfApp1
         // cria um fio e marca como automático
         private Wire CreateWireBetween(GateModel source, GateModel target, int targetIndex = 0)
         {
+            // evita conectar uma porta a ela mesma ou criar ciclos
+            if (target == source || target.DependsOn(source))
+            {
+                MessageBox.Show("Conexão inválida (loop detectado)");
+                return null;
+            }
+
             var wire = new Wire(source, target, targetIndex)
             {
                 Auto = true
@@ -440,19 +510,24 @@ namespace WpfApp1
             double offsetX = 150;   // distância horizontal entre colunas
             double offsetY = 100;   // distância vertical entre elementos
 
-            // Separa as portas em categorias
+            // --- SEPARAÇÃO DOS ELEMENTOS ---
             var entradas = inputToControl.Values.ToList();
             var saidas = outputToControl.Values.ToList();
-            var portas = modelToControl.Values.ToList();
+            var portas = modelToControl.Keys
+            .Where(m => !(m is InputNode) && !(m is OutputNode))
+            .Select(m => modelToControl[m]) // volta pro controle visual
+            .ToList();
 
-            // Posiciona as entradas à esquerda
+
+            // --- POSICIONAMENTO ---
+            // Entradas (à esquerda)
             for (int i = 0; i < entradas.Count; i++)
             {
                 Canvas.SetLeft(entradas[i], startX);
                 Canvas.SetTop(entradas[i], startY + i * offsetY);
             }
 
-            // Posiciona as portas lógicas no meio (em várias colunas)
+            // Portas no meio (até 4 por coluna)
             int col = 0, row = 0;
             double midStartX = startX + offsetX;
             foreach (var porta in portas)
@@ -461,14 +536,14 @@ namespace WpfApp1
                 Canvas.SetTop(porta, startY + row * offsetY);
 
                 row++;
-                if (row >= 4) // 4 por coluna (ajuste se quiser mais)
+                if (row >= 4)
                 {
                     row = 0;
                     col++;
                 }
             }
 
-            // Posiciona as saídas à direita
+            // Saídas (à direita)
             double rightX = startX + offsetX * (col + 1);
             for (int i = 0; i < saidas.Count; i++)
             {
@@ -476,52 +551,64 @@ namespace WpfApp1
                 Canvas.SetTop(saidas[i], startY + i * offsetY);
             }
 
-            // Reconecta automaticamente (Entrada → Portas → Saída)
+            // --- LIGAÇÕES ---
+            // Limpa fios antigos
             wires.Clear();
             cnvSimulador.Children.OfType<Line>().ToList().ForEach(l => cnvSimulador.Children.Remove(l));
 
-            if (entradas.Count > 0 && portas.Count > 0)
-            {
-                // Liga cada entrada a uma porta diferente, se possível
-                for (int i = 0; i < entradas.Count; i++)
-                {
-                    var entrada = entradas[i];
-                    var destinoIndex = i % portas.Count; // se houver mais entradas que portas, ele reaproveita
+            // Cria camadas (entradas, portas intermediárias, saídas)
+            var depthLayers = new List<List<GateModel>>();
+            depthLayers.Add(inputToControl.Keys.Cast<GateModel>().ToList()); // camada 0 (entradas)
 
-                    CreateWireBetween(
-                        GetModelFromControl((FrameworkElement)entrada),
-                        GetModelFromControl((FrameworkElement)portas[destinoIndex])
-                    );
+            // divide portas em blocos de até 4 por camada
+            for (int i = 0; i < portas.Count; i += 4)
+            {
+                var layer = portas.Skip(i).Take(4)
+                    .Select(p => GetModelFromControl(p))
+                    .Where(m => m != null)
+                    .ToList();
+
+                if (layer.Count > 0)
+                    depthLayers.Add(layer);
+            }
+
+            // camada final (saídas)
+            depthLayers.Add(outputToControl.Keys.Cast<GateModel>().ToList());
+
+            // --- CONEXÕES ENTRE CAMADAS ---
+            for (int d = 0; d < depthLayers.Count - 1; d++)
+            {
+                var current = depthLayers[d];
+                var next = depthLayers[d + 1];
+
+                for (int j = 0; j < next.Count; j++)
+                {
+                    // Pega duas fontes da camada anterior (com rotação)
+                    var src1 = current[j % current.Count];
+                    var src2 = current[(j + 1) % current.Count];
+                    var dst = next[j];
+
+                    CreateWireBetween(src1, dst, 0);
+                    CreateWireBetween(src2, dst, 1);
                 }
             }
 
-            if (portas.Count > 1)
+            // --- CONEXÃO FINAL COM SAÍDA ---
+            if (outputToControl.Count > 0 && depthLayers.Count > 1)
             {
-                // Liga cada porta na próxima
-                for (int i = 0; i < portas.Count - 1; i++)
-                {
-                    CreateWireBetween(
-                    GetModelFromControl((FrameworkElement)portas[i]),
-                    GetModelFromControl((FrameworkElement)portas[i + 1])
-                    );
-                }
-            }
+                var outNode = outputToControl.Keys.First();
+                var lastRealLayer = depthLayers[depthLayers.Count - 2]; // camada antes das saídas
+                var lastGate = lastRealLayer.Last();
 
-            if (saidas.Count > 0 && portas.Count > 0)
-            {
-                // Liga a última porta à saída
-                foreach (var saida in saidas)
-                {
-                    CreateWireBetween(
-                    GetModelFromControl((FrameworkElement)portas.Last()),
-                    GetModelFromControl((FrameworkElement)saida)
-                    );
-                }
+                outNode.Source = lastGate;
+                var wire = CreateWireBetween(lastGate, outNode, 0);
+                UpdateWirePosition(wire);
             }
 
             RefreshAllControls();
         }
-        
+
+
 
         private void btnOrganizar_Click(object sender, RoutedEventArgs e)
         {

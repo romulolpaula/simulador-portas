@@ -41,5 +41,7 @@ namespace WpfApp1.Models
             Output = Value;
             return Output;
         }
+
+
     }
 }

@@ -19,7 +19,7 @@ namespace WpfApp1.Controls
 
         public void Initialize(OutputNode node)
         {
-            Model = Model;
+            Model = node;
             _node = node;
             UpdateDisplay();
         }
@@ -33,12 +33,24 @@ namespace WpfApp1.Controls
                 ? Brushes.LimeGreen
                 : Brushes.Gray;
         }
+        public static readonly RoutedEvent InputPortClickedEvent =
+        EventManager.RegisterRoutedEvent("InputPortClicked",
+        RoutingStrategy.Bubble,
+        typeof(RoutedEventHandler),
+        typeof(OutputNodeControl));
 
-        // Quando o usuário tenta conectar um fio na entrada
+        public event RoutedEventHandler InputPortClicked
+        {
+            add { AddHandler(InputPortClickedEvent, value); }
+            remove { RemoveHandler(InputPortClickedEvent, value); }
+        }
+
         private void InputPort_MouseDown(object sender, MouseButtonEventArgs e)
         {
             if (_node == null) return;
-            ((SimuladorCircuito)Application.Current.MainWindow)?.IniciarLigacao(_node, "input");
+
+            RaiseEvent(new RoutedEventArgs(InputPortClickedEvent, this));
         }
+
     }
 }
