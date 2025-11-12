@@ -48,24 +48,24 @@ namespace WpfApp1.Controls
 
         public void UpdatePortVisuals()
         {
-            // usa os PortInfo (não Model.Inputs diretamente)
             if (Inputs != null)
             {
-                if (Inputs.Length > 0 && Inputs[0]?.VisualEllipse != null)
-                    Inputs[0].VisualEllipse.Fill = Inputs[0].Value ? Brushes.LimeGreen : Brushes.Gray;
-
-                if (Inputs.Length > 1 && Inputs[1]?.VisualEllipse != null)
-                    Inputs[1].VisualEllipse.Fill = Inputs[1].Value ? Brushes.LimeGreen : Brushes.Gray;
+                for (int i = 0; i < Inputs.Length; i++)
+                {
+                    var p = Inputs[i];
+                    if (p?.VisualEllipse != null)
+                        p.VisualEllipse.Fill = p.Value ? Brushes.LimeGreen : Brushes.Gray;
+                }
             }
 
             if (OutputPort?.VisualEllipse != null && Model != null)
             {
-                // sincroniza o valor lógico da saída com o modelo
+                // sincroniza valor da saída com o modelo lógico
                 OutputPort.Value = Model.Output;
                 OutputPort.VisualEllipse.Fill = OutputPort.Value ? Brushes.LimeGreen : Brushes.Gray;
             }
-
         }
+
 
         private void Port_MouseDown(object sender, MouseButtonEventArgs e)
         {

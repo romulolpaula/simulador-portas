@@ -22,11 +22,12 @@ namespace WpfApp1.Models
             UpdateVisual();
         }
 
-        public void SetState(bool val)
+        public void SetState(bool state)
         {
-            Value = val;
-            UpdateVisual();
+            Value = state;
+            VisualEllipse.Fill = state ? Brushes.LimeGreen : Brushes.Gray;
         }
+
 
         public void UpdateVisual()
         {

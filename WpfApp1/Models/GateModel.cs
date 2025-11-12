@@ -30,7 +30,6 @@ namespace WpfApp1.Models
             if (visited == null)
                 visited = new HashSet<Guid>();
 
-            // se já foi avaliado antes, evita ciclos e reavaliações desnecessárias
             if (visited.Contains(Id))
                 return Output;
 
@@ -40,10 +39,12 @@ namespace WpfApp1.Models
             foreach (var input in Inputs)
                 input.Evaluate(visited);
 
-            // calcula a saída da porta atual
+            // calcula a saída com base nas saídas mais recentes das entradas
             Output = ComputeOutput();
 
             return Output;
         }
+
+
     }
 }

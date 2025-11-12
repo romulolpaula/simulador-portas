@@ -24,39 +24,41 @@ namespace WpfApp1.Models
 
         public void UpdatePosition()
         {
-            if (Source?.VisualEllipse == null || Target?.VisualEllipse == null)
+            if (PathVisual == null || Source?.VisualEllipse == null || Target?.VisualEllipse == null)
                 return;
 
-            // pega as posições absolutas das elipses no canvas
+            // Pega a posição absoluta das bolinhas
             Point p1 = Source.VisualEllipse.TranslatePoint(
                 new Point(Source.VisualEllipse.Width / 2, Source.VisualEllipse.Height / 2),
                 Application.Current.MainWindow);
-
             Point p2 = Target.VisualEllipse.TranslatePoint(
                 new Point(Target.VisualEllipse.Width / 2, Target.VisualEllipse.Height / 2),
                 Application.Current.MainWindow);
 
-            // cria o formato dobrado (em L ou Z)
-            var geometry = new PathGeometry();
-            var figure = new PathFigure { StartPoint = p1 };
-
-            // ponto intermediário para o "L"
+            // desenha fio dobrado (em L)
             double midX = (p1.X + p2.X) / 2;
+
+            PathGeometry geometry = new PathGeometry();
+            PathFigure figure = new PathFigure { StartPoint = p1 };
+
+            // Caminho: saída → dobra no meio → entrada
             figure.Segments.Add(new LineSegment(new Point(midX, p1.Y), true));
             figure.Segments.Add(new LineSegment(new Point(midX, p2.Y), true));
             figure.Segments.Add(new LineSegment(p2, true));
 
             geometry.Figures.Add(figure);
             PathVisual.Data = geometry;
-
-            // cor conforme sinal lógico
-            PathVisual.Stroke = (Source.Value) ? Brushes.LimeGreen : Brushes.Gray;
         }
+
 
         public void UpdateColor()
         {
-            if (PathVisual == null) return;
-            PathVisual.Stroke = Source?.Value == true ? Brushes.LimeGreen : Brushes.Gray;
+            if (PathVisual == null || Source == null) return;
+
+            bool ativo = Source.IsOutput ? Source.Gate.Output : Source.Value;
+            PathVisual.Stroke = ativo ? Brushes.LimeGreen : Brushes.Gray;
+            PathVisual.StrokeThickness = 2;
         }
+
     }
 }

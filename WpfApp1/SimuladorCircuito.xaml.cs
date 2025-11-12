@@ -109,39 +109,38 @@ namespace WpfApp1
                     }
 
                     var wire = new Wire(saida, entrada);
-                    cnvSimulador.Children.Insert(0, wire.PathVisual); 
+                    cnvSimulador.Children.Insert(0, wire.PathVisual);
                     wires.Add(wire);
 
                     entrada.ConnectedWire = wire;
-                    entrada.Gate.Inputs.Add(saida.Gate);
+
+                    if (!entrada.Gate.Inputs.Contains(saida.Gate))
+                        entrada.Gate.Inputs.Add(saida.Gate);
+
+                    entrada.SetState(saida.Gate.Output);
+
+                    EvaluateAll();
 
                     wire.UpdatePosition();
                     wire.UpdateColor();
 
-                    EvaluateAll();
-
                     pendingSource = null;
                     RefreshAllControls();
                 }
             }
         }
+
+
 
         private void OnOutputPortClicked(object sender, RoutedEventArgs e)
         {
-            if (e.OriginalSource is PortInfo info)
+            if (e.OriginalSource is PortInfo saida)
             {
-                if (pendingSource == null)
-                {
-                    pendingSource = info;
-                    info.VisualEllipse.Stroke = Brushes.LimeGreen; 
-                }
-                else
-                {
-                    pendingSource = null;
-                    RefreshAllControls();
-                }
+                pendingSource = saida;
+                saida.VisualEllipse.Stroke = Brushes.LimeGreen;
             }
         }
+
 
 
         private void CreateWireBetween(PortInfo source, PortInfo target)
@@ -166,19 +165,29 @@ namespace WpfApp1
 
         private void EvaluateAll()
         {
-            // Primeiro: sincroniza os valores das bolinhas manuais com o modelo
+            // 1️⃣ Atualiza o modelo de cada porta com base nos fios conectados
             foreach (var kv in modelToControl)
             {
                 var model = kv.Key;
                 var control = kv.Value;
 
-                // Para cada entrada manual (sem fio), aplica o valor da PortInfo diretamente no modelo
+                model.Inputs.Clear(); // zera pra reconstruir
+
+                foreach (var port in control.Inputs)
+                {
+                    if (port.ConnectedWire != null)
+                    {
+                        var origem = port.ConnectedWire.Source.Gate;
+                        model.Inputs.Add(origem);
+                    }
+                }
+
+                // Entradas manuais (sem fio)
                 for (int i = 0; i < control.Inputs.Length; i++)
                 {
                     var port = control.Inputs[i];
                     if (port.ConnectedWire == null)
                     {
-                        // cria uma "porta de entrada" virtual para propagar o valor manual
                         var dummy = new InputGateAdapter(port.Value);
                         if (model.Inputs.Count > i)
                             model.Inputs[i] = dummy;
@@ -188,44 +197,82 @@ namespace WpfApp1
                 }
             }
 
-            // Agora: avalia as portas em ordem de profundidade (entrada → saída)
-            var ordered = gates.OrderBy(g => GetDepth(g)).ToList();
-            foreach (var g in ordered)
+            // 2️⃣ Propaga até estabilizar (resolve o problema das colunas seguintes)
+            bool mudou;
+            int safety = 0;
+            do
             {
-                try { g.Evaluate(); } catch { }
-            }
+                mudou = false;
+                var ordered = gates.OrderBy(g => GetDepth(g)).ToList();
+                foreach (var g in ordered)
+                {
+                    bool oldValue = g.Output;
+                    try { g.Evaluate(); } catch { }
 
+                    if (g.Output != oldValue)
+                        mudou = true;
+                }
+                safety++;
+            } while (mudou && safety < 10); // evita loop infinito
+
+            // 3️⃣ Atualiza visual
             RefreshAllControls();
         }
+
+
+
 
         private Point GetAbsolutePosition(PortInfo port)
         {
             if (port?.VisualEllipse == null)
                 return new Point(0, 0);
 
-            // Transforma a posição da bolinha (ellipse) em coordenadas absolutas do Canvas
-            var transform = port.VisualEllipse.TransformToAncestor(cnvSimulador);
-            Point relativePoint = transform.Transform(new Point(port.VisualEllipse.Width / 2, port.VisualEllipse.Height / 2));
-            return relativePoint;
+            // pega posição relativa dentro do Canvas
+            Point relative = port.VisualEllipse.TranslatePoint(
+                new Point(port.VisualEllipse.Width / 2, port.VisualEllipse.Height / 2),
+                cnvSimulador
+            );
+
+            return relative;
         }
 
         private void RefreshAllControls()
         {
-            // atualiza visuais de cada GateControl
+            // 1) Atualiza posição e cor dos fios e propaga valor lógico para a PortInfo de destino
+            foreach (var wire in wires)
+            {
+                // reposiciona o Path (fio dobrado)
+                wire.UpdatePosition();
+
+                // define cor conforme valor lógico atual da fonte e aplica na bolinha de destino
+                wire.UpdateColor();
+
+                // além de UpdateColor (que já muda cor), garante que o PortInfo do destino receba o valor
+                if (wire.Source != null && wire.Target != null)
+                {
+                    bool val;
+                    try
+                    {
+                        val = wire.Source.IsOutput ? wire.Source.Gate.Output : wire.Source.Value;
+                    }
+                    catch
+                    {
+                        val = wire.Source?.Value ?? false;
+                    }
+
+                    // atualiza o valor da entrada (porta de destino) — isso atualiza também o Visual se SetState faz isso
+                    wire.Target.SetState(val);
+                }
+            }
+
+            // 2) Atualiza os controles das portas (cada GateControl já sabe como desenhar suas elipses)
             foreach (var kv in modelToControl)
             {
                 var control = kv.Value;
                 control.UpdatePortVisuals();
             }
-
-            // reposiciona e recolore todos os fios (se você implementou Wire.Line)
-            foreach (var wire in wires)
-            {
-                UpdateWirePosition(wire);
-                wire.UpdateColor();
-            }
-
         }
+
 
         private bool CreatesCycle(GateModel from, GateModel to)
         {
