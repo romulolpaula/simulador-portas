@@ -4,23 +4,28 @@
              xmlns:svgc="http://sharpvectors.codeplex.com/svgc/"
              Width="101" Height="100">
     <Grid>
-        <!-- SVG da porta -->
         <svgc:SvgViewbox x:Name="GateImage"
                          Stretch="Uniform"
                          HorizontalAlignment="Center"
                          VerticalAlignment="Center" Width="104"/>
 
-        <!-- Bolinhas de entrada -->
         <Ellipse x:Name="Input0" Width="10" Height="10" Fill="Gray"
                  HorizontalAlignment="Left" VerticalAlignment="Top"
-                 Margin="-2,35,0,0" MouseDown="Input_MouseDown"/>
+                 Margin="-2,35,0,0"
+                 MouseDown="Port_MouseDown"
+                 IsHitTestVisible="True"
+                 Cursor="Hand"/>
         <Ellipse x:Name="Input1" Width="10" Height="10" Fill="Gray"
                  HorizontalAlignment="Left" VerticalAlignment="Bottom"
-                 Margin="-2,0,0,35" MouseDown="Input_MouseDown"/>
-
-        <!-- Bolinha de saída -->
+                 Margin="-2,0,0,35"
+                 MouseDown="Port_MouseDown"
+                 IsHitTestVisible="True"
+                 Cursor="Hand"/>
         <Ellipse x:Name="Output" Width="10" Height="10" Fill="Gray"
                  HorizontalAlignment="Left" VerticalAlignment="Center"
-                 Margin="91,0,0,0" MouseDown="Output_MouseDown"/>
+                 Margin="91,0,0,0"
+                 MouseDown="Port_MouseDown"
+                 IsHitTestVisible="True"
+                 Cursor="Hand"/>
     </Grid>
 </UserControl>

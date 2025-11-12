@@ -50,19 +50,8 @@
                 <ComboBoxItem Content="Porta NOR"/>
                 <ComboBoxItem Content="Porta XOR"/>
                 <ComboBoxItem Content="Porta XNOR"/>
-                <Separator/>
-                <ComboBoxItem Content="Entrada"/>
-                <ComboBoxItem Content="Saída"/>
             </ComboBox>
 
-            <!-- ComboBox para escolher a coluna -->
-            <ComboBox x:Name="cmbColuna" Width="120" SelectionChanged="cmbColuna_SelectionChanged">
-                <ComboBoxItem Content="Coluna 0 (Entradas)"/>
-                <ComboBoxItem Content="Coluna 1"/>
-                <ComboBoxItem Content="Coluna 2"/>
-                <ComboBoxItem Content="Coluna 3"/>
-                <ComboBoxItem Content="Coluna 4 (Saídas)"/>
-            </ComboBox>
             <Label Content=" " Height="10"/>
             <Button x:Name="btnSalvar" 
                     Width="150"
@@ -97,6 +86,24 @@
                     BorderBrush="#FFACACAC"
                     Margin="0,0,0,10"
                     Click="btnOrganizar_Click"/>
+            <Button x:Name="btnProximaColuna" 
+            Width="150"
+            Content="Próxima Coluna"
+            FontSize="10"
+            FontFamily="Century Gothic"
+            Background="#FFEAEAEA" 
+            BorderBrush="#FFACACAC"
+            Margin="0,0,0,10"
+            Click="btnProximaColuna_Click"/>
+            <Button x:Name="btnColunaAnterior" 
+            Width="150"
+            Content="Coluna Anterior"
+            FontSize="10"
+            FontFamily="Century Gothic"
+            Background="#FFEAEAEA" 
+            BorderBrush="#FFACACAC"
+            Margin="0,0,0,10"
+            Click="btnColunaAnterior_Click"/>
         </StackPanel>
     </Grid>
 </Window>
