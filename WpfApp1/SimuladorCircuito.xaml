@@ -55,6 +55,15 @@
                 <ComboBoxItem Content="Saída"/>
             </ComboBox>
 
+            <!-- ComboBox para escolher a coluna -->
+            <ComboBox x:Name="cmbColuna" Width="120" SelectionChanged="cmbColuna_SelectionChanged">
+                <ComboBoxItem Content="Coluna 0 (Entradas)"/>
+                <ComboBoxItem Content="Coluna 1"/>
+                <ComboBoxItem Content="Coluna 2"/>
+                <ComboBoxItem Content="Coluna 3"/>
+                <ComboBoxItem Content="Coluna 4 (Saídas)"/>
+            </ComboBox>
+            <Label Content=" " Height="10"/>
             <Button x:Name="btnSalvar" 
                     Width="150"
                     Content="Salvar Circuito"

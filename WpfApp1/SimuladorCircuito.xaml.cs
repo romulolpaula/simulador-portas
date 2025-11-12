@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
@@ -19,6 +20,8 @@ namespace WpfApp1
         private Dictionary<OutputNode, OutputNodeControl> outputToControl = new Dictionary<OutputNode, OutputNodeControl>();
         private object pendingSource = null; // Pode ser GateModel ou InputNode
         private List<Wire> wires = new List<Wire>();
+        private List<List<GateModel>> colunas = new List<List<GateModel>>();
+        private int colunaSelecionada = 0;
 
         public SimuladorCircuito()
         {
@@ -28,18 +31,28 @@ namespace WpfApp1
 
         // Adiciona porta automaticamente quando selecionada no ComboBox
         private void cmbPorta_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
+        {   
+
             if (cmbPorta.SelectedItem is ComboBoxItem item)
             {
                 string selected = item.Content.ToString();
 
-                if (selected == "Entrada")
-                {
+                if (selected == "Entrada" )
+                {   if (colunaSelecionada != 0)
+                    {
+                        MessageBox.Show("Entradas só podem ser adicionadas na Coluna 0!");
+                        return;
+                    }
                     var inputNode = new InputNode();
                     AddInputNode(inputNode);
                 }
                 else if (selected == "Saída")
-                {
+                {   
+                    if (colunaSelecionada != colunas.Count -1)
+                    {
+                        MessageBox.Show("Saídas só podem ser adicionadas na última coluna!");
+                        return;
+                    }
                     var outputNode = new OutputNode();
                     AddOutputNode(outputNode);
                 }
@@ -78,31 +91,39 @@ namespace WpfApp1
             control.AddHandler(GateControl.OutputPortClickedEvent, new RoutedEventHandler(OnOutputPortClicked));
             control.AddHandler(GateControl.InputPortClickedEvent, new RoutedEventHandler(OnInputPortClicked));
 
-            PositionNextGate(control);
+            // --- POSICIONAMENTO PELA COLUNA ---
+            double posX = 150 + (colunaSelecionada * 180);
+            double posY = 80 + (colunas[colunaSelecionada].Count * 120);
+            Canvas.SetLeft(control, posX);
+            Canvas.SetTop(control, posY);
 
             cnvSimulador.Children.Add(control);
-            control.LayoutUpdated += (s, ev) => {
-                // small optimization: você pode checar se realmente mudou posição antes de refrescar tudo
-                RefreshAllControls();
-            };
-
             modelToControl[model] = control;
+            colunas[colunaSelecionada].Add(model);
 
-            if (gates.Count > 1)
+            // --- CONECTA COM COLUNA ANTERIOR ---
+            if (colunaSelecionada > 0 && colunas[colunaSelecionada - 1].Count > 0)
             {
-                var source = gates[gates.Count - 2];
-                var target = gates[gates.Count - 1];
+                var anterior = colunas[colunaSelecionada - 1];
+                int qtdEntradas = GetRequiredInputCount(model);
 
-                var wire = new Wire(source, target, 0);//conecta a saída do gate anterior à entrada do novo gate
-                wires.Add(wire);
-                cnvSimulador.Children.Add(wire.LineShape);
+                // Conecta a porta atual com as últimas N saídas da coluna anterior
+                for (int i = 0; i < qtdEntradas && i < anterior.Count; i++)
+                {
+                    var src = anterior[i];
+                    var wire = new Wire(src, model, i);
+                    wires.Add(wire);
+                    cnvSimulador.Children.Add(wire.LineShape);
+                    UpdateWirePosition(wire);
 
-                UpdateWirePosition(wire);
-                EvaluateAll();
-
+                    model.Inputs.Add(src);
+                }
             }
+
             RefreshAllControls();
+            EvaluateAll();
         }
+
 
         // Adiciona InputNode manualmente
         // Adiciona InputNode manualmente
@@ -351,7 +372,6 @@ namespace WpfApp1
         }
 
 
-
         private void RefreshAllControls()
         {
             foreach (var kv in modelToControl)
@@ -505,115 +525,177 @@ namespace WpfApp1
         //organiza em camadas e conecta automaticamente
         private void AutoArrangeAndConnect()
         {
-            double startX = 80;     // posição inicial (coluna mais à esquerda)
-            double startY = 50;     // posição inicial (linha superior)
-            double offsetX = 150;   // distância horizontal entre colunas
-            double offsetY = 100;   // distância vertical entre elementos
+            double startX = 80;
+            double startY = 50;
+            double offsetX = 150;
+            double offsetY = 100;
 
-            // --- SEPARAÇÃO DOS ELEMENTOS ---
             var entradas = inputToControl.Values.ToList();
             var saidas = outputToControl.Values.ToList();
-            var portas = modelToControl.Keys
-            .Where(m => !(m is InputNode) && !(m is OutputNode))
-            .Select(m => modelToControl[m]) // volta pro controle visual
-            .ToList();
+            var allGates = modelToControl.Keys
+                .Where(m => !(m is InputNode) && !(m is OutputNode))
+                .ToList();
 
+            // Limpa conexões antigas
+            foreach (var gate in allGates)
+                gate.Inputs.Clear();
 
-            // --- POSICIONAMENTO ---
-            // Entradas (à esquerda)
-            for (int i = 0; i < entradas.Count; i++)
-            {
-                Canvas.SetLeft(entradas[i], startX);
-                Canvas.SetTop(entradas[i], startY + i * offsetY);
-            }
-
-            // Portas no meio (até 4 por coluna)
-            int col = 0, row = 0;
-            double midStartX = startX + offsetX;
-            foreach (var porta in portas)
-            {
-                Canvas.SetLeft(porta, midStartX + col * offsetX);
-                Canvas.SetTop(porta, startY + row * offsetY);
-
-                row++;
-                if (row >= 4)
-                {
-                    row = 0;
-                    col++;
-                }
-            }
-
-            // Saídas (à direita)
-            double rightX = startX + offsetX * (col + 1);
-            for (int i = 0; i < saidas.Count; i++)
-            {
-                Canvas.SetLeft(saidas[i], rightX);
-                Canvas.SetTop(saidas[i], startY + i * offsetY);
-            }
-
-            // --- LIGAÇÕES ---
-            // Limpa fios antigos
             wires.Clear();
             cnvSimulador.Children.OfType<Line>().ToList().ForEach(l => cnvSimulador.Children.Remove(l));
 
-            // Cria camadas (entradas, portas intermediárias, saídas)
+            // === Cria as camadas ===
             var depthLayers = new List<List<GateModel>>();
-            depthLayers.Add(inputToControl.Keys.Cast<GateModel>().ToList()); // camada 0 (entradas)
+            depthLayers.Add(inputToControl.Keys.Cast<GateModel>().ToList()); // camada 0: entradas
+            var allGatesToProcess = new Queue<GateModel>(allGates);
+            var previousLayer = depthLayers[0];
 
-            // divide portas em blocos de até 4 por camada
-            for (int i = 0; i < portas.Count; i += 4)
+            while (previousLayer.Count > 0 && allGatesToProcess.Count > 0)
             {
-                var layer = portas.Skip(i).Take(4)
-                    .Select(p => GetModelFromControl(p))
-                    .Where(m => m != null)
-                    .ToList();
+                int nextLayerSize = Math.Min(previousLayer.Count, allGatesToProcess.Count);
+                var nextLayer = new List<GateModel>();
 
-                if (layer.Count > 0)
-                    depthLayers.Add(layer);
+                for (int i = 0; i < nextLayerSize; i++)
+                    nextLayer.Add(allGatesToProcess.Dequeue());
+
+                if (nextLayer.Count > 0)
+                {
+                    depthLayers.Add(nextLayer);
+                    previousLayer = nextLayer;
+                }
+                else
+                {
+                    break;
+                }
             }
 
-            // camada final (saídas)
-            depthLayers.Add(outputToControl.Keys.Cast<GateModel>().ToList());
+            // Adiciona camada final (saídas)
+            if (outputToControl.Count > 0)
+                depthLayers.Add(outputToControl.Keys.Cast<GateModel>().ToList());
 
-            // --- CONEXÕES ENTRE CAMADAS ---
+            // === Posiciona graficamente ===
+            double currentLayerX = startX;
+            for (int d = 0; d < depthLayers.Count; d++)
+            {
+                var layer = depthLayers[d];
+                if (layer == null || layer.Count == 0)
+                    continue;
+
+                double totalLayerHeight = layer.Count * offsetY;
+                double canvasCenterY = cnvSimulador.ActualHeight > 0 ? cnvSimulador.ActualHeight / 2 : 200;
+                double startYAdjusted = canvasCenterY - (totalLayerHeight / 2);
+                double currentLayerY = Math.Max(startY, startYAdjusted);
+
+                foreach (var model in layer)
+                {
+                    UserControl ctrl = null;
+
+                    if (model is OutputNode outNode && outputToControl.TryGetValue(outNode, out var outCtrl))
+                        ctrl = outCtrl;
+                    else if (model is InputNode inpNode && inputToControl.TryGetValue(inpNode, out var inpCtrl))
+                        ctrl = inpCtrl;
+                    else if (modelToControl.TryGetValue(model, out var gateCtrl))
+                        ctrl = gateCtrl;
+
+                    if (ctrl == null) continue;
+
+                    Canvas.SetLeft(ctrl, currentLayerX);
+                    Canvas.SetTop(ctrl, currentLayerY);
+                    currentLayerY += offsetY;
+                }
+
+                currentLayerX += offsetX;
+            }
+
+            // === Conectar automaticamente ===
             for (int d = 0; d < depthLayers.Count - 1; d++)
             {
                 var current = depthLayers[d];
                 var next = depthLayers[d + 1];
 
+                if (current == null || next == null || current.Count == 0 || next.Count == 0)
+                    continue;
+
                 for (int j = 0; j < next.Count; j++)
                 {
-                    // Pega duas fontes da camada anterior (com rotação)
-                    var src1 = current[j % current.Count];
-                    var src2 = current[(j + 1) % current.Count];
                     var dst = next[j];
+                    if (dst == null) continue;
 
-                    CreateWireBetween(src1, dst, 0);
-                    CreateWireBetween(src2, dst, 1);
+                    // Caso seja uma saída, conecta a última da camada anterior
+                    if (dst is OutputNode outNode)
+                    {
+                        var src = current.LastOrDefault();
+                        if (src != null)
+                        {
+                            outNode.Source = src;
+                            CreateWireBetween(src, dst, 0);
+                        }
+                    }
+                    else
+                    {
+                        // Primeira camada de portas: conecta todas as entradas
+                        if (current.All(m => m is InputNode))
+                        {
+                            int inputIndex = 0;
+                            foreach (var src in current)
+                            {
+                                if (src != null)
+                                    CreateWireBetween(src, dst, inputIndex++);
+                            }
+                        }
+                        else
+                        {
+                            // Camadas intermediárias: conecta 2 anteriores
+                            var src1 = current[Math.Min(j, current.Count - 1)];
+                            var src2 = current[Math.Min(j + 1, current.Count - 1)];
+
+                            if (src1 != null)
+                                CreateWireBetween(src1, dst, 0);
+                            if (src2 != null)
+                                CreateWireBetween(src2, dst, 1);
+                        }
+                    }
                 }
             }
 
-            // --- CONEXÃO FINAL COM SAÍDA ---
-            if (outputToControl.Count > 0 && depthLayers.Count > 1)
-            {
-                var outNode = outputToControl.Keys.First();
-                var lastRealLayer = depthLayers[depthLayers.Count - 2]; // camada antes das saídas
-                var lastGate = lastRealLayer.Last();
-
-                outNode.Source = lastGate;
-                var wire = CreateWireBetween(lastGate, outNode, 0);
-                UpdateWirePosition(wire);
-            }
-
+            EvaluateAll();
             RefreshAllControls();
-        }
 
+            MessageBox.Show("Circuito organizado e conectado automaticamente!", "Sucesso", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
 
 
         private void btnOrganizar_Click(object sender, RoutedEventArgs e)
         {
-            MessageBox.Show("Organizando circuito...");
-            AutoArrangeAndConnect();
+            // Liga todas as entradas (coluna 0) a todas as portas da primeira coluna (coluna 1) 
+            if (colunas.Count > 1)
+            {
+                var colEntradas = colunas[0];
+                var colPrimeirasPortas = colunas[1];
+
+                foreach (var entrada in colEntradas)
+                {
+                    foreach (var porta in colPrimeirasPortas)
+                    {
+                        // Evita duplicatas
+                        if (!porta.Inputs.Contains(entrada))
+                        {
+                            porta.Inputs.Add(entrada);
+                        }
+                    }
+                }
+            }
+
+        }
+
+        private void cmbColuna_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            colunaSelecionada = cmbColuna.SelectedIndex;
+
+            // Cria colunas automaticamente até o índice selecionado
+            while (colunas.Count <= colunaSelecionada)
+                colunas.Add(new List<GateModel>());
+
+            MessageBox.Show($"Coluna selecionada: {colunaSelecionada}");
         }
     }
 }
