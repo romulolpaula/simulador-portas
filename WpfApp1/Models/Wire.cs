@@ -8,57 +8,51 @@ namespace WpfApp1.Models
     {
         public PortInfo Source { get; }
         public PortInfo Target { get; }
-        public Path PathVisual { get; private set; }  
+        public Path PathVisual { get; }
+
+        private PathGeometry geometry;
 
         public Wire(PortInfo source, PortInfo target)
         {
             Source = source;
             Target = target;
 
+            geometry = new PathGeometry();
+
             PathVisual = new Path
             {
-                Stroke = Brushes.LightGreen,
-                StrokeThickness = 2
+                Stroke = Brushes.Gray,
+                StrokeThickness = 2,
+                Data = geometry
             };
         }
 
-        public void UpdatePosition()
+        public void UpdateGeometry(Point p1, Point p2)
         {
-            if (PathVisual == null || Source?.VisualEllipse == null || Target?.VisualEllipse == null)
-                return;
-
-            // Pega a posição absoluta das bolinhas
-            Point p1 = Source.VisualEllipse.TranslatePoint(
-                new Point(Source.VisualEllipse.Width / 2, Source.VisualEllipse.Height / 2),
-                Application.Current.MainWindow);
-            Point p2 = Target.VisualEllipse.TranslatePoint(
-                new Point(Target.VisualEllipse.Width / 2, Target.VisualEllipse.Height / 2),
-                Application.Current.MainWindow);
-
-            // desenha fio dobrado (em L)
             double midX = (p1.X + p2.X) / 2;
 
-            PathGeometry geometry = new PathGeometry();
-            PathFigure figure = new PathFigure { StartPoint = p1 };
+            var fig = new PathFigure
+            {
+                StartPoint = p1,
+                IsClosed = false,
+                IsFilled = false
+            };
 
-            // Caminho: saída → dobra no meio → entrada
-            figure.Segments.Add(new LineSegment(new Point(midX, p1.Y), true));
-            figure.Segments.Add(new LineSegment(new Point(midX, p2.Y), true));
-            figure.Segments.Add(new LineSegment(p2, true));
+            fig.Segments.Add(new LineSegment(new Point(midX, p1.Y), true));
+            fig.Segments.Add(new LineSegment(new Point(midX, p2.Y), true));
+            fig.Segments.Add(new LineSegment(p2, true));
 
-            geometry.Figures.Add(figure);
-            PathVisual.Data = geometry;
+            geometry.Figures.Clear();
+            geometry.Figures.Add(fig);
         }
-
 
         public void UpdateColor()
         {
-            if (PathVisual == null || Source == null) return;
+            if (Source == null) return;
 
             bool ativo = Source.IsOutput ? Source.Gate.Output : Source.Value;
-            PathVisual.Stroke = ativo ? Brushes.LimeGreen : Brushes.Gray;
-            PathVisual.StrokeThickness = 2;
-        }
 
+            PathVisual.Stroke = ativo ? Brushes.LimeGreen : Brushes.Gray;
+        }
     }
 }
