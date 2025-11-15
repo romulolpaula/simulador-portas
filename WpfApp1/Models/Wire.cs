@@ -27,24 +27,24 @@ namespace WpfApp1.Models
             };
         }
 
-        public void UpdateGeometry(Point p1, Point p2)
+        public void UpdateGeometry(Point p1, Point p2, double midX)
         {
-            double midX = (p1.X + p2.X) / 2;
+            if (PathVisual == null)
+                return;
 
-            var fig = new PathFigure
-            {
-                StartPoint = p1,
-                IsClosed = false,
-                IsFilled = false
-            };
+            PathGeometry geometry = new PathGeometry();
+            PathFigure figure = new PathFigure { StartPoint = p1 };
 
-            fig.Segments.Add(new LineSegment(new Point(midX, p1.Y), true));
-            fig.Segments.Add(new LineSegment(new Point(midX, p2.Y), true));
-            fig.Segments.Add(new LineSegment(p2, true));
+            // Caminho dobrado usando midX deslocado
+            figure.Segments.Add(new LineSegment(new Point(midX, p1.Y), true));
+            figure.Segments.Add(new LineSegment(new Point(midX, p2.Y), true));
+            figure.Segments.Add(new LineSegment(p2, true));
 
-            geometry.Figures.Clear();
-            geometry.Figures.Add(fig);
+            geometry.Figures.Add(figure);
+            PathVisual.Data = geometry;
         }
+
+
 
         public void UpdateColor()
         {

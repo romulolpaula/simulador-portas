@@ -120,7 +120,8 @@ namespace WpfApp1
                     EvaluateAll();
                     var p1 = GetPortCenter(wire.Source);
                     var p2 = GetPortCenter(wire.Target);
-                    wire.UpdateGeometry(p1, p2);
+                    UpdateWirePosition(wire);
+                    
 
                     wire.UpdateColor();
 
@@ -158,13 +159,37 @@ namespace WpfApp1
 
         private void UpdateWirePosition(Wire wire)
         {
-            if (wire?.PathVisual == null) return;
+            if (wire == null || wire.PathVisual == null) return;
 
             var p1 = GetPortCenter(wire.Source);
             var p2 = GetPortCenter(wire.Target);
 
-            wire.UpdateGeometry(p1, p2);
+            // midX base
+            double midXBase = (p1.X + p2.X) / 2;
+
+            // agrupa fios que teriam midX próximo (tolerância)
+            var sameColumn = wires.Where(w =>
+            {
+                if (w.Source == null || w.Target == null) return false;
+                var a = GetPortCenter(w.Source);
+                var b = GetPortCenter(w.Target);
+                double x = (a.X + b.X) / 2;
+                return Math.Abs(x - midXBase) < 6; // ajusta tolerância se necessário
+            }).ToList();
+
+            int index = sameColumn.IndexOf(wire);
+            int count = sameColumn.Count;
+
+            double spacing = 12; // distância horizontal entre fios — ajuste aqui
+                                 // centraliza os offsets: por exemplo para 3 fios -> -12, 0, +12
+            double midX = midXBase + (index - (count - 1) / 2.0) * spacing;
+
+            // chama a rotina do Wire que desenha usando midX
+            wire.UpdateGeometry(p1, p2, midX);
         }
+
+
+
 
         private Point GetPortCenter(PortInfo port)
         {
@@ -254,7 +279,8 @@ namespace WpfApp1
             {
                 var p1 = GetPortCenter(wire.Source);
                 var p2 = GetPortCenter(wire.Target);
-                wire.UpdateGeometry(p1, p2);
+                UpdateWirePosition(wire);
+                
 
 
                 wire.UpdateColor();
