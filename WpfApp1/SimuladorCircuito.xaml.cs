@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -142,8 +144,6 @@ namespace WpfApp1
             }
         }
 
-
-
         private void CreateWireBetween(PortInfo source, PortInfo target)
         {
             if (CreatesCycle(source.Gate, target.Gate))
@@ -164,27 +164,24 @@ namespace WpfApp1
             var p1 = GetPortCenter(wire.Source);
             var p2 = GetPortCenter(wire.Target);
 
-            // midX base
             double midXBase = (p1.X + p2.X) / 2;
 
-            // agrupa fios que teriam midX próximo (tolerância)
             var sameColumn = wires.Where(w =>
             {
                 if (w.Source == null || w.Target == null) return false;
                 var a = GetPortCenter(w.Source);
                 var b = GetPortCenter(w.Target);
                 double x = (a.X + b.X) / 2;
-                return Math.Abs(x - midXBase) < 6; // ajusta tolerância se necessário
+                return Math.Abs(x - midXBase) < 6; 
             }).ToList();
 
             int index = sameColumn.IndexOf(wire);
             int count = sameColumn.Count;
 
-            double spacing = 12; // distância horizontal entre fios — ajuste aqui
-                                 // centraliza os offsets: por exemplo para 3 fios -> -12, 0, +12
+            double spacing = 12; 
+                                 
             double midX = midXBase + (index - (count - 1) / 2.0) * spacing;
 
-            // chama a rotina do Wire que desenha usando midX
             wire.UpdateGeometry(p1, p2, midX);
         }
 
@@ -256,9 +253,6 @@ namespace WpfApp1
 
             RefreshAllControls();
         }
-
-
-
 
         private Point GetAbsolutePosition(PortInfo port)
         {
@@ -338,40 +332,6 @@ namespace WpfApp1
             return modelToControl.FirstOrDefault(x => x.Value == control).Key;
         }
 
-        private void btnOrganizar_Click(object sender, RoutedEventArgs e)
-        {
-            double startX = 100;
-            double startY = 80;
-            double offsetX = 200;
-            double offsetY = 100;
-
-            var levels = new Dictionary<GateModel, int>();
-            foreach (var g in gates)
-                levels[g] = GetDepth(g);
-
-            var grouped = gates.GroupBy(g => levels[g])
-                               .OrderBy(g => g.Key);
-
-            int col = 0;
-            foreach (var group in grouped)
-            {
-                int row = 0;
-                foreach (var g in group)
-                {
-                    if (modelToControl.TryGetValue(g, out var control))
-                    {
-                        double posX = startX + col * offsetX;
-                        double posY = startY + row * offsetY;
-                        Canvas.SetLeft(control, posX);
-                        Canvas.SetTop(control, posY);
-                        row++;
-                    }
-                }
-                col++;
-            }
-
-            RefreshAllControls();
-        }
 
         private int GetDepth(GateModel gate)
         {
@@ -394,5 +354,73 @@ namespace WpfApp1
             if (currentColumn > 0)
                 currentColumn--;
         }
+
+        private void btnTabelaVerdade_Click(object sender, RoutedEventArgs e)
+        {
+            var entradas = obterEntradasSoltas();
+            var saidas = obterSaidas();
+
+            if (entradas.Count == 0 || saidas.Count == 0)
+            {
+                MessageBox.Show("É necessário pelo menos uma entrada e uma saída.");
+                return;
+            }
+
+            int n = entradas.Count;
+            int linhas = 1 << n; // 2^n combinações
+
+            var tabela = new System.Data.DataTable();
+
+            for (int i = 0; i < n; i++)
+                tabela.Columns.Add($"IN{i + 1}");
+
+            for (int i = 0; i < saidas.Count; i++)
+                tabela.Columns.Add($"OUT{i + 1}");
+
+            for (int i = 0; i < linhas; i++)
+            {
+                bool[] bits = new bool[n];
+                for (int b = 0; b < n; b++)
+                    bits[b] = ((i >> b) & 1) == 1;
+
+                for (int b = 0; b < n; b++)
+                    entradas[b].SetState(bits[b]);
+
+                EvaluateAll();
+
+                var row = tabela.NewRow();
+
+                for (int b = 0; b < n; b++)
+                    row[b] = bits[b] ? 1 : 0;
+
+                // saídas (usa PortInfo.Value da saída)
+                for (int s = 0; s < saidas.Count; s++)
+                    row[n + s] = saidas[s].Value ? 1 : 0;
+
+                tabela.Rows.Add(row);
+            }
+
+            var janela = new TabelaVerdade(tabela);
+            janela.Owner = this;
+            janela.Show();
+        }
+
+
+        private List<PortInfo> obterEntradasSoltas()
+        {
+            return modelToControl.Values
+                .SelectMany(c => c.Inputs ?? Array.Empty<PortInfo>())
+                .Where(p => p != null && p.ConnectedWire == null)
+                .ToList();
+        }
+
+        private List<PortInfo> obterSaidas()
+        {
+            return modelToControl.Values
+                .Select(c => c.OutputPort)
+                .Where(p => p != null)
+                .ToList();
+        }
+
     }
 }

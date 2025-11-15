@@ -15,7 +15,7 @@
             <ColumnDefinition Width="200" />
         </Grid.ColumnDefinitions>
 
-        <!-- Área do simulador -->
+        <!-- simulador -->
         <Canvas x:Name="cnvSimulador" 
                 Background="#FFDADADA"
                 Margin="10"
@@ -23,7 +23,7 @@
 
         </Canvas>
 
-        <!-- Menu lateral -->
+        <!-- Menu -->
         <StackPanel Grid.Column="1" Margin="10">
             <Label Content="MENU" 
                    FontFamily="Century Gothic" 
@@ -77,15 +77,6 @@
                     Background="#FFEAEAEA" 
                     BorderBrush="#FFACACAC"
                     Margin="0,0,0,10"/>
-            <Button x:Name="btnOrganizar" 
-                    Width="150"
-                    Content="Organizar Circuito"
-                    FontSize="10"
-                    FontFamily="Century Gothic"
-                    Background="#FFEAEAEA" 
-                    BorderBrush="#FFACACAC"
-                    Margin="0,0,0,10"
-                    Click="btnOrganizar_Click"/>
             <Button x:Name="btnProximaColuna" 
             Width="150"
             Content="Próxima Coluna"
@@ -104,6 +95,15 @@
             BorderBrush="#FFACACAC"
             Margin="0,0,0,10"
             Click="btnColunaAnterior_Click"/>
+            <Button x:Name="btnTabelaVerdade" 
+            Width="150"
+            Content="Gerar Tabela Verdade"
+            FontSize="10"
+            FontFamily="Century Gothic"
+            Background="#FFEAEAEA" 
+            BorderBrush="#FFACACAC"
+            Margin="0,0,0,10"
+            Click="btnTabelaVerdade_Click"/>
         </StackPanel>
     </Grid>
 </Window>
