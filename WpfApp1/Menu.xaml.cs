@@ -23,5 +23,17 @@ namespace WpfApp1
         {
             InitializeComponent();
         }
+
+        private void btnSimularCircuito_Click(object sender, RoutedEventArgs e)
+        {
+            SimuladorCircuito simulador = new SimuladorCircuito();
+            simulador.Show();
+        }
+
+        private void btnSimularKarnaugh_Click(object sender, RoutedEventArgs e)
+        {
+            MapaK mapaK = new MapaK();
+            mapaK.Show();
+        }
     }
 }
