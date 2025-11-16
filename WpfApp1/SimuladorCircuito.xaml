@@ -6,7 +6,8 @@
         xmlns:svgc="http://sharpvectors.codeplex.com/svgc/"
         xmlns:local="clr-namespace:WpfApp1"
         mc:Ignorable="d"
-        Title="SimuladorCircuito" Height="450" Width="800">
+        Title="SimuladorCircuito" Height="450" Width="800"
+        Icon="pack://application:,,,/Images/logo.ico">
 
     <Grid>
         <!-- Definindo 2 colunas: simulador ocupa tudo e menu lateral ocupa a direita -->
@@ -60,7 +61,7 @@
                     FontFamily="Century Gothic"
                     Background="#FFEAEAEA" 
                     BorderBrush="#FFACACAC"
-                    Margin="0,0,0,10"/>
+                    Margin="0,0,0,10" Click="btnSalvar_Click"/>
             <Button x:Name="btnCarregar" 
                     Width="150"
                     Content="Carregar Circuito"
@@ -68,15 +69,7 @@
                     FontFamily="Century Gothic"
                     Background="#FFEAEAEA" 
                     BorderBrush="#FFACACAC"
-                    Margin="0,0,0,10"/>
-            <Button x:Name="btnExportar" 
-                    Width="150"
-                    Content="Exportar Circuito"
-                    FontSize="10"
-                    FontFamily="Century Gothic"
-                    Background="#FFEAEAEA" 
-                    BorderBrush="#FFACACAC"
-                    Margin="0,0,0,10"/>
+                    Margin="0,0,0,10" Click="btnCarregar_Click"/>
             <Button x:Name="btnProximaColuna" 
             Width="150"
             Content="Próxima Coluna"

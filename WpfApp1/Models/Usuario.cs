@@ -4,13 +4,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace WpfApp1.Classes
+namespace WpfApp1.Models
 {
     class Usuario
     {
-        public int IdUsuario { get; set; }
-        public required string Nome { get; set; }
-        public required string Email { get; set; }
-        public required string SenhaHash { get; set; }
+        public int Id { get; set; }
+        public string Username { get; set; }
+        public string Senha { get; set; }
     }
 }

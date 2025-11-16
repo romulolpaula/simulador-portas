@@ -19,6 +19,12 @@ namespace WpfApp1
     /// </summary>
     public partial class Menu : Window
     {
+        public Menu(String nomeUsuario)
+        {
+            InitializeComponent();
+            lblBemVindo.Content = $"Olá, {nomeUsuario}!";
+        }
+
         public Menu()
         {
             InitializeComponent();

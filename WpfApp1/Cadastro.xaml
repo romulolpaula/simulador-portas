@@ -1,0 +1,27 @@
+﻿<Window x:Class="WpfApp1.Cadastro"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Cadastro" Height="350" Width="400" Background="White"
+        Icon="pack://application:,,,/Images/logo.ico">
+    <Grid Margin="20">
+
+        <Label Content="Cadastro" FontSize="22" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,20"/>
+
+        <Label Content="Nome:" Margin="10,50,0,0" VerticalAlignment="Top"/>
+        <TextBox x:Name="txtNome" Margin="100,50,10,0" VerticalAlignment="Top" Background="LightGray"/>
+
+        <Label Content="E-mail:" Margin="10,90,0,0" VerticalAlignment="Top"/>
+        <TextBox x:Name="txtUsuario" Margin="100,90,10,0" VerticalAlignment="Top" Background="LightGray"/>
+
+        <Label Content="Senha:" Margin="10,130,0,0" VerticalAlignment="Top"/>
+        <PasswordBox x:Name="txtSenha" Margin="100,130,10,0" VerticalAlignment="Top" Background="LightGray"/>
+
+        <Button Content="Cadastrar"
+                Width="120"
+                Height="30"
+                Margin="0,180,0,0"
+                VerticalAlignment="Top"
+                HorizontalAlignment="Center"
+                Click="BtnCadastrar_Click"/>
+    </Grid>
+</Window>

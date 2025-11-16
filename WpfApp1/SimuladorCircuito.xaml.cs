@@ -7,6 +7,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
+using WpfApp1.Banco_de_Dados;
 using WpfApp1.Controls;
 using WpfApp1.Models;
 
@@ -22,6 +23,8 @@ namespace WpfApp1
         private Dictionary<int, List<GateModel>> colunas = new();
         private PortInfo selectedOutput = null;
         private List<Wire> wires = new();
+        private CircuitoDAO circuitoDAO = new CircuitoDAO();
+
 
 
         public SimuladorCircuito()
@@ -422,5 +425,309 @@ namespace WpfApp1
                 .ToList();
         }
 
+        private void SalvarCircuitoUI(string nomeDoCircuito, string username)
+        {
+            try
+            {
+                var data = new CircuitoData
+                {
+                    Nome = nomeDoCircuito,
+                    Username = username
+                };
+
+                // map GateModel -> tempIndex
+                var gateIndex = new Dictionary<GateModel, int>();
+                for (int i = 0; i < gates.Count; i++)
+                    gateIndex[gates[i]] = i;
+
+                // preparar portas
+                for (int i = 0; i < gates.Count; i++)
+                {
+                    var gm = gates[i];
+                    var ctrl = modelToControl[gm];
+                    double posX = Canvas.GetLeft(ctrl);
+                    double posY = Canvas.GetTop(ctrl);
+
+                    // obter coluna e index na coluna (se existir)
+                    int coluna = -1;
+                    int idx = -1;
+                    foreach (var kv in colunas)
+                    {
+                        var list = kv.Value;
+                        int pos = list.IndexOf(gm);
+                        if (pos >= 0)
+                        {
+                            coluna = kv.Key;
+                            idx = pos;
+                            break;
+                        }
+                    }
+
+                    data.Portas.Add(new PortaRecord
+                    {
+                        TempIndex = i,
+                        Tipo = gm.GetType().Name,
+                        PosX = posX,
+                        PosY = posY,
+                        Coluna = coluna >= 0 ? coluna : 0,
+                        IndexNaColuna = idx >= 0 ? idx : 0
+                    });
+                }
+
+                // preparar conexões a partir de wires
+                foreach (var w in wires)
+                {
+                    if (w.Source == null || w.Target == null) continue;
+
+                    var srcGate = w.Source.Gate;
+                    var tgtGate = w.Target.Gate;
+
+                    if (!gateIndex.ContainsKey(srcGate) || !gateIndex.ContainsKey(tgtGate)) continue;
+                    int srcIdx = gateIndex[srcGate];
+                    int tgtIdx = gateIndex[tgtGate];
+
+                    int srcPortIndex = GetPortIndex(w.Source);
+                    int tgtPortIndex = GetPortIndex(w.Target);
+
+                    data.Conexoes.Add(new ConexaoRecord
+                    {
+                        SourceTempIndex = srcIdx,
+                        SourcePortIndex = srcPortIndex,
+                        TargetTempIndex = tgtIdx,
+                        TargetPortIndex = tgtPortIndex
+                    });
+                }
+
+                int id = circuitoDAO.SalvarCircuito(data);
+                MessageBox.Show($"Circuito '{nomeDoCircuito}' salvo com id {id}");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Erro ao salvar circuito: " + ex.Message);
+            }
+        }
+
+        private void CarregarCircuitoUI(int circuitoId)
+        {
+            try
+            {
+                var data = circuitoDAO.CarregarCircuito(circuitoId);
+                if (data == null) { MessageBox.Show("Circuito não encontrado"); return; }
+
+                // limpar canvas atual (wires visuais)
+                foreach (var w in wires.ToList())
+                {
+                    if (w.PathVisual != null && cnvSimulador.Children.Contains(w.PathVisual))
+                        cnvSimulador.Children.Remove(w.PathVisual);
+                }
+                wires.Clear();
+
+                // limpar controles das portas
+                foreach (var ctrl in modelToControl.Values.ToList())
+                    cnvSimulador.Children.Remove(ctrl);
+                modelToControl.Clear();
+                gates.Clear();
+                colunas.Clear();
+
+                // recriar portas (mantendo a ordem data.Portas -> tempIndex)
+                foreach (var p in data.Portas)
+                {
+                    // localizar Type a partir do nome salvo
+                    Type gateType = Type.GetType($"WpfApp1.Models.{p.Tipo}") ?? Type.GetType($"WpfApp1.{p.Tipo}") ?? null;
+                    if (gateType == null)
+                    {
+                        // tenta procurar pelo assembly atual
+                        gateType = AppDomain.CurrentDomain.GetAssemblies()
+                            .SelectMany(a => a.GetTypes())
+                            .FirstOrDefault(t => t.Name == p.Tipo);
+                    }
+                    if (gateType == null) continue;
+
+                    var model = (GateModel)Activator.CreateInstance(gateType);
+                    gates.Add(model);
+
+                    var control = new GateControl();
+                    string imageName = GetImageNameForGate(gateType);
+                    control.Initialize(model, imageName);
+
+                    control.AddHandler(GateControl.OutputPortClickedEvent, new RoutedEventHandler(OnOutputPortClicked));
+                    control.AddHandler(GateControl.InputPortClickedEvent, new RoutedEventHandler(OnInputPortClicked));
+
+                    // posicionamento no canvas
+                    Canvas.SetLeft(control, p.PosX);
+                    Canvas.SetTop(control, p.PosY);
+
+                    cnvSimulador.Children.Add(control);
+                    modelToControl[model] = control;
+
+                    // reconstruir colunas
+                    if (!colunas.ContainsKey(p.Coluna))
+                        colunas[p.Coluna] = new List<GateModel>();
+                    colunas[p.Coluna].Add(model);
+                }
+
+                // Agora recriar conexões (wires) usando os indices temporários
+                foreach (var c in data.Conexoes)
+                {
+                    if (c.SourceTempIndex < 0 || c.SourceTempIndex >= gates.Count) continue;
+                    if (c.TargetTempIndex < 0 || c.TargetTempIndex >= gates.Count) continue;
+
+                    var srcGate = gates[c.SourceTempIndex];
+                    var tgtGate = gates[c.TargetTempIndex];
+
+                    var srcControl = modelToControl[srcGate];
+                    var tgtControl = modelToControl[tgtGate];
+
+                    var srcPort = GetOutputPortByIndex(srcControl, c.SourcePortIndex);
+                    var tgtPort = GetInputPortByIndex(tgtControl, c.TargetPortIndex);
+
+                    if (srcPort == null || tgtPort == null) continue;
+
+                    var wire = new Wire(srcPort, tgtPort);
+                    cnvSimulador.Children.Insert(0, wire.PathVisual);
+                    wires.Add(wire);
+                    tgtPort.ConnectedWire = wire;
+
+                    if (!tgtPort.Gate.Inputs.Contains(srcPort.Gate))
+                        tgtPort.Gate.Inputs.Add(srcPort.Gate);
+
+                    tgtPort.SetState(srcPort.Gate.Output);
+                    UpdateWirePosition(wire);
+                    wire.UpdateColor();
+                }
+
+                this.Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    try
+                    {
+                        // garante que os controles já foram medidos e posicionados
+                        this.UpdateLayout();
+
+                        // recalcula posição/geomtria de todos os wires explicitamente
+                        foreach (var wire in wires)
+                        {
+                            // proteção caso algum wire ainda não tenha PathVisual
+                            if (wire == null || wire.PathVisual == null) continue;
+                            UpdateWirePosition(wire);
+                            wire.UpdateColor();
+                        }
+
+                        // atualiza visuais dos controles (círculos, cores, etc)
+                        RefreshAllControls();
+
+                        // reavalia lógica de saída das portas (opcional, mas seguro)
+                        EvaluateAll();
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show("Erro ao finalizar o carregamento visual: " + ex.Message);
+                    }
+                }), System.Windows.Threading.DispatcherPriority.Loaded);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Erro ao carregar circuito: " + ex.Message);
+            }
+        }
+
+        // Helper: obtém índice do pino dentro do control (input index ou 0 para saída)
+        private int GetPortIndex(PortInfo p)
+        {
+            if (p == null) return 0;
+            // se PortInfo expõe propriedade Index -> usar aqui (ex: p.Index)
+            // caso contrário, procura dentro do control inputs
+            if (p.IsOutput)
+                return 0; // saída padrão
+            var ctrl = modelToControl.GetValueOrDefault(p.Gate);
+            if (ctrl != null && ctrl.Inputs != null)
+            {
+                for (int i = 0; i < ctrl.Inputs.Length; i++)
+                {
+                    if (ctrl.Inputs[i] == p) return i;
+                }
+            }
+            return 0;
+        }
+
+        private PortInfo GetInputPortByIndex(GateControl control, int index)
+        {
+            if (control == null) return null;
+            if (control.Inputs == null || index < 0 || index >= control.Inputs.Length) return null;
+            return control.Inputs[index];
+        }
+
+        private PortInfo GetOutputPortByIndex(GateControl control, int index)
+        {
+            if (control == null) return null;
+            // normalmente um gate tem apenas uma saída
+            return control.OutputPort;
+        }
+
+        private void btnSalvar_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                string nome = Microsoft.VisualBasic.Interaction
+                    .InputBox("Nome do circuito:", "Salvar circuito", "meu-circuito");
+
+                if (string.IsNullOrWhiteSpace(nome))
+                    return;
+
+                // CORREÇÃO IMPORTANTE AQUI
+                if (string.IsNullOrWhiteSpace(App.CurrentUsername))
+                {
+                    MessageBox.Show("Usuário não identificado. Faça login novamente.");
+                    return;
+                }
+
+                SalvarCircuitoUI(nome, App.CurrentUsername);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Erro ao iniciar salvar: " + ex.Message);
+            }
+        }
+        private void btnCarregar_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(App.CurrentUsername))
+                {
+                    MessageBox.Show("Usuário não identificado. Faça login novamente.");
+                    return;
+                }
+
+                var lista = circuitoDAO.ListarCircuitosDoUsuario(App.CurrentUsername);
+
+                if (lista.Count == 0)
+                {
+                    MessageBox.Show("Nenhum circuito salvo.");
+                    return;
+                }
+
+                var janela = new CarregarCircuitoWindow(lista);
+
+                if (janela.ShowDialog() == true)
+                {
+                    var escolhido = janela.CircuitoSelecionado;
+                    CarregarCircuitoUI(escolhido.Id);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Erro ao carregar lista: " + ex.Message);
+            }
+        }
+
+    }
+
+    internal static class DictExt
+    {
+        public static TValue GetValueOrDefault<TKey, TValue>(this Dictionary<TKey, TValue> d, TKey k)
+        {
+            if (d.TryGetValue(k, out var v)) return v;
+            return default;
+        }
     }
 }
+

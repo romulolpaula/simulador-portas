@@ -12,6 +12,7 @@
     <None Remove="Images\and.svg" />
     <None Remove="Images\bolina.svg" />
     <None Remove="Images\linha.svg" />
+    <None Remove="Images\logo.ico" />
     <None Remove="Images\nand.svg" />
     <None Remove="Images\nor.svg" />
     <None Remove="Images\not.svg" />
@@ -21,10 +22,17 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Resource Include="Images\logo.ico">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.9" />
     <PackageReference Include="Microsoft.Data.Sqlite.Core" Version="9.0.9" />
     <PackageReference Include="SharpVectors" Version="1.8.5" />
     <PackageReference Include="SharpVectors.Wpf" Version="1.8.5" />
+    <PackageReference Include="System.Data.SQLite" Version="2.0.2" />
   </ItemGroup>
 
   <ItemGroup>

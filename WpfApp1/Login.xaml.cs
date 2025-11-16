@@ -1,27 +1,61 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
+using WpfApp1.Banco_de_Dados;
 
 namespace WpfApp1
 {
-    /// <summary>
-    /// Lógica interna para Login.xaml
-    /// </summary>
     public partial class Login : Window
     {
+        private UsuarioDAO usuarioDAO = new UsuarioDAO();
+
         public Login()
         {
             InitializeComponent();
+        }
+
+        private void btnEntrar_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                string email = txtEmail.Text.Trim();
+                string senha = txtSenha.Password.Trim();
+
+                if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(senha))
+                {
+                    MessageBox.Show("Preencha todos os campos!", "Atenção", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                var usuario = usuarioDAO.VerificarLogin(email, senha);
+
+                if (usuario != null)
+                {
+                    App.CurrentUsername = usuario.UsuarioLogin;
+                    App.CurrentUserId = usuario.Id;
+
+                    MessageBox.Show($"Login realizado com sucesso! Bem-vindo, {usuario.Nome}", "Bem-vindo", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                    var menu = new Menu(usuario.Nome); // seu Menu já usa nome
+                    menu.Show();
+                    this.Close();
+                }
+                else
+                {
+                    MessageBox.Show("E-mail ou senha incorretos!", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Erro ao tentar realizar login:\n" + ex.Message,
+                                "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+
+        private void btnCadastrar_Click(object sender, RoutedEventArgs e)
+        {
+            Cadastro cad = new Cadastro();
+            cad.ShowDialog();
         }
     }
 }

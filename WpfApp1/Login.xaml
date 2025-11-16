@@ -3,72 +3,89 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:WpfApp1"
         mc:Ignorable="d"
         Title="Login" Height="450" Width="800"
-        Background="white">
+        Background="White"
+        Icon="pack://application:,,,/Images/logo.ico">
+
     <Grid>
-        <Label x:Name="lbLogin" 
-               Content="LOGIN" 
-               HorizontalAlignment="Center" 
-               Margin="0,69,0,0" 
-               VerticalAlignment="Top" 
-               FontFamily="Century Gothic" 
-               FontWeight="Bold" 
-               FontSize="22" 
-               Foreground="black"/>
-        <Label x:Name="lblEmail" 
-               Content="Digite seu e-mail:" 
-               HorizontalAlignment="Center" 
-               Margin="0,111,0,0" 
-               VerticalAlignment="Top" 
-               Width="110" Height="28" 
-               FontFamily="Century Gothic" 
-               Foreground="Black"/>
-        <TextBox x:Name="txtEmail" 
-                HorizontalAlignment="Center" 
-                Margin="0,144,0,0" 
-                TextWrapping="Wrap" 
-                Text="" VerticalAlignment="Top" 
-                Width="286" 
-                Background="LightGray"/>
-        <Label x:Name="lblSenha" 
-               Content="Digite sua senha:" 
-               HorizontalAlignment="Center" 
-               Margin="0,184,0,0" 
-               VerticalAlignment="Top" 
-               Width="110" Height="28" 
-               FontFamily="Century Gothic" 
-               Foreground="Black"/>
-        <TextBox x:Name="txtSenha" 
-                HorizontalAlignment="Center" 
-                Margin="0,217,0,0" 
-                TextWrapping="Wrap" 
-                Text="" 
-                VerticalAlignment="Top" 
-                Width="286" 
-                Background="LightGray"/>
-        <Button x:Name="btnEntrar" 
-                Content="Entrar" 
-                HorizontalAlignment="Center" 
-                Margin="0,285,0,0" 
-                VerticalAlignment="Top"
-                Width="110"
-                FontFamily="Century Gothic"
-                Background="Aquamarine" 
-                Height="25">
 
-        <Button.Template>
-            <ControlTemplate TargetType="Button">
-                <Border Background="LightGray" CornerRadius="5">
-                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                </Border>
-            </ControlTemplate>
-        </Button.Template>
-        </Button>
+        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
 
+            <!-- Título -->
+            <Label Content="LOGIN"
+                   FontFamily="Century Gothic"
+                   FontWeight="Bold"
+                   FontSize="26"
+                   Foreground="Black"
+                   HorizontalAlignment="Center"
+                   Margin="0 0 0 20"/>
 
+            <!-- Email -->
+            <Label Content="Digite seu e-mail:"
+                   FontFamily="Century Gothic"
+                   Foreground="Black"
+                   HorizontalAlignment="Center"/>
+            <TextBox x:Name="txtEmail"
+                     Width="300"
+                     Background="LightGray"
+                     Margin="0 0 0 20"/>
 
+            <!-- Senha -->
+            <Label Content="Digite sua senha:"
+                   FontFamily="Century Gothic"
+                   Foreground="Black"
+                   HorizontalAlignment="Center"/>
+            <PasswordBox x:Name="txtSenha"
+                         Width="300"
+                         Background="LightGray"
+                         Margin="0 0 0 25"/>
+
+            <!-- Botões -->
+            <Grid HorizontalAlignment="Center">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="40"/>
+                    <!-- espaço entre botões -->
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <Button x:Name="btnEntrar"
+                        Content="Entrar"
+                        Width="120" Height="30"
+                        FontFamily="Century Gothic"
+                        Background="Aquamarine"
+                        Click="btnEntrar_Click"
+                        Grid.Column="0">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border Background="LightGray" CornerRadius="5">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+
+                <Button x:Name="btnCadastrar"
+                        Content="Cadastrar"
+                        Width="120" Height="30"
+                        FontFamily="Century Gothic"
+                        Background="Aquamarine"
+                        Click="btnCadastrar_Click"
+                        Grid.Column="2">
+                    <Button.Template>
+                        <ControlTemplate TargetType="{x:Type Button}">
+                            <Border Background="LightGray" CornerRadius="5">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+
+            </Grid>
+
+        </StackPanel>
 
     </Grid>
+
 </Window>

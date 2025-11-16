@@ -5,11 +5,70 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:WpfApp1"
         mc:Ignorable="d"
-        Title="TabelaVerdade" Height="450" Width="800">
+        Title="Tabela Verdade" Height="450" Width="800"
+        Background="#1E1E1E"
+        WindowStartupLocation="CenterScreen"
+        Icon="pack://application:,,,/Images/logo.ico">
+
+    <Window.Resources>
+
+        <!-- Estilo geral DataGrid -->
+        <Style TargetType="DataGrid">
+            <Setter Property="Background" Value="#1E1E1E"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="#3A3A3A"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="RowBackground" Value="#262626"/>
+            <Setter Property="AlternatingRowBackground" Value="#1F1F1F"/>
+            <Setter Property="HorizontalGridLinesBrush" Value="#3A3A3A"/>
+            <Setter Property="VerticalGridLinesBrush" Value="#3A3A3A"/>
+
+            <!-- FONTE AQUI -->
+            <Setter Property="FontFamily" Value="Century Gothic"/>
+            <Setter Property="FontSize" Value="14"/>
+
+            <Setter Property="RowHeight" Value="32"/>
+            <Setter Property="ColumnHeaderHeight" Value="36"/>
+            <Setter Property="Margin" Value="10"/>
+            <Setter Property="IsReadOnly" Value="True"/>
+            <Setter Property="CanUserResizeRows" Value="False"/>
+        </Style>
+
+        <!-- Cabeçalhos -->
+        <Style TargetType="DataGridColumnHeader">
+            <Setter Property="Background" Value="#2A2A2A"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="Padding" Value="10,5"/>
+            <Setter Property="BorderBrush" Value="#444"/>
+            <Setter Property="BorderThickness" Value="0,0,0,1"/>
+
+            <!-- FONTE AQUI -->
+            <Setter Property="FontFamily" Value="Century Gothic"/>
+            <Setter Property="FontSize" Value="15"/>
+        </Style>
+
+        <!-- Células -->
+        <Style TargetType="DataGridCell">
+            <Setter Property="BorderBrush" Value="#333"/>
+            <Setter Property="BorderThickness" Value="0,0,0,1"/>
+            <Setter Property="Padding" Value="8,4"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+
+            <!-- FONTE AQUI -->
+            <Setter Property="FontFamily" Value="Century Gothic"/>
+            <Setter Property="FontSize" Value="14"/>
+        </Style>
+
+    </Window.Resources>
 
     <Grid Margin="8">
-        <DataGrid x:Name="TabelaGrid" AutoGenerateColumns="True" IsReadOnly="True"
-                  CanUserAddRows="False" CanUserDeleteRows="False" />
+        <DataGrid x:Name="TabelaGrid"
+                  AutoGenerateColumns="True"
+                  IsReadOnly="True"
+                  CanUserAddRows="False"
+                  CanUserDeleteRows="False"/>
     </Grid>
 
 </Window>
