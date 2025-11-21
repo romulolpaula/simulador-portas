@@ -10,7 +10,6 @@ namespace WpfApp1.Banco_de_Dados
         private static readonly string DatabaseFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "SimuladorPortas.db");
         private static readonly string ConnectionString = $"Data Source={DatabaseFile};Version=3;";
 
-        // cria o arquivo e as tabelas (chame uma vez no App startup)
         public static void InicializarBanco()
         {
             try
@@ -23,7 +22,6 @@ namespace WpfApp1.Banco_de_Dados
                 using var conn = new SQLiteConnection(ConnectionString);
                 conn.Open();
 
-                // tabela Usuarios (note nomes e colunas compatíveis com DAOs)
                 string sqlUsuarios = @"
                     CREATE TABLE IF NOT EXISTS Usuarios (
                         Id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -80,14 +78,12 @@ namespace WpfApp1.Banco_de_Dados
             }
         }
 
-        // retorna conexão aberta — use THIS everywhere (padroniza)
         public static SQLiteConnection GetConnection()
         {
             try
             {
                 if (!File.Exists(DatabaseFile))
                 {
-                    // caso alguém chame GetConnection sem InicializarBanco, cria o arquivo
                     SQLiteConnection.CreateFile(DatabaseFile);
                 }
 

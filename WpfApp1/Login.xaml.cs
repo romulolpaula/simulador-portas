@@ -35,7 +35,7 @@ namespace WpfApp1
 
                     MessageBox.Show($"Login realizado com sucesso! Bem-vindo, {usuario.Nome}", "Bem-vindo", MessageBoxButton.OK, MessageBoxImage.Information);
 
-                    var menu = new Menu(usuario.Nome); // seu Menu já usa nome
+                    var menu = new Menu(usuario.Nome); 
                     menu.Show();
                     this.Close();
                 }

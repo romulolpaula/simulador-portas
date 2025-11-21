@@ -17,7 +17,6 @@ namespace WpfApp1
             InitializeComponent();
         }
 
-        // ---------------- UI events ----------------
         private void BtnGenerate_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -43,8 +42,8 @@ namespace WpfApp1
                 bool[] truthBits = ParseInput(input, vars);
 
                 var grupos = FindGroups(truthBits, vars);
-                DrawKMap(truthBits, vars); // redesenha células limpas
-                DrawGroupsFilled(grupos, vars); // preenchimento leve + contorno
+                DrawKMap(truthBits, vars); 
+                DrawGroupsFilled(grupos, vars); 
 
                 string expressao = SimplificarExpressaoFromGroups(grupos, vars);
                 txtExpressaoSimplificada.Text = expressao;
@@ -67,8 +66,20 @@ namespace WpfApp1
 
                 if (dlg.ShowDialog() == true)
                 {
+                    // Força o WPF a desenhar e definir tamanho real do Canvas
+                    karnaughCanvas.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+                    karnaughCanvas.Arrange(new Rect(0, 0, karnaughCanvas.DesiredSize.Width, karnaughCanvas.DesiredSize.Height));
+                    karnaughCanvas.UpdateLayout();
+
+                    int width = (int)karnaughCanvas.ActualWidth;
+                    int height = (int)karnaughCanvas.ActualHeight;
+
+                    if (width == 0 || height == 0)
+                        throw new Exception("Canvas sem tamanho renderizado!");
+
                     RenderTargetBitmap rtb = new RenderTargetBitmap(
-                        (int)Math.Max(karnaughCanvas.Width, 100), (int)Math.Max(karnaughCanvas.Height, 100), 96, 96, PixelFormats.Pbgra32);
+                        width, height, 96, 96, PixelFormats.Pbgra32);
+
                     rtb.Render(karnaughCanvas);
 
                     PngBitmapEncoder encoder = new PngBitmapEncoder();
@@ -86,7 +97,7 @@ namespace WpfApp1
             }
         }
 
-        // ---------------- Input parsing ----------------
+
         private bool[] ParseInput(string input, int vars)
         {
             int length = (int)Math.Pow(2, vars);
@@ -115,18 +126,14 @@ namespace WpfApp1
             return bits;
         }
 
-        // ---------------- Gray orders & helpers ----------------
         private int[,] GetKmapOrder(int vars)
         {
             return vars switch
             {
-                // 2 variables -> 2x2: rows = A(0,1), cols = B(0,1)
                 2 => new int[,] { { 0, 1 }, { 2, 3 } },
 
-                // 3 variables -> 2x4: rows = A(0,1), cols = BC in Gray 00,01,11,10
                 3 => new int[,] { { 0, 1, 3, 2 }, { 4, 5, 7, 6 } },
 
-                // 4 variables -> 4x4: rows = AB (Gray), cols = CD (Gray)
                 4 => new int[,] {
                     { 0, 1, 3, 2 },
                     { 4, 5, 7, 6 },
@@ -137,7 +144,6 @@ namespace WpfApp1
             };
         }
 
-        // ---------------- Draw kmap with labels ----------------
         private void DrawKMap(bool[] truthBits, int vars)
         {
             karnaughCanvas.Children.Clear();
@@ -146,17 +152,14 @@ namespace WpfApp1
             int cols = (vars == 2) ? 2 : 4;
             double cellSize = 80;
 
-            // cabeçalhos Gray
-            string[] grayCols2 = { "0", "1" };                // for 2 vars columns (B)
-            string[] grayCols4 = { "00", "01", "11", "10" };  // for 3/4 vars columns (BC or CD)
-            string[] grayRowsA = { "0", "1" };                // for 3 vars rows (A)
-            string[] grayRowsAB = { "00", "01", "11", "10" }; // for 4 vars rows (AB)
+            string[] grayCols2 = { "0", "1" };                
+            string[] grayCols4 = { "00", "01", "11", "10" }; 
+            string[] grayRowsA = { "0", "1" };               
+            string[] grayRowsAB = { "00", "01", "11", "10" }; 
 
-            // titles
             string colTitle = vars switch { 2 => "B", 3 => "BC", 4 => "CD", _ => "" };
             string rowTitle = vars switch { 2 => "A", 3 => "A", 4 => "AB", _ => "" };
 
-            // draw col title
             TextBlock colTitleText = new TextBlock
             {
                 Text = colTitle,
@@ -167,7 +170,6 @@ namespace WpfApp1
             Canvas.SetTop(colTitleText, -50);
             karnaughCanvas.Children.Add(colTitleText);
 
-            // draw column labels
             for (int x = 0; x < cols; x++)
             {
                 string label = vars == 2 ? grayCols2[x] : grayCols4[x];
@@ -182,7 +184,6 @@ namespace WpfApp1
                 karnaughCanvas.Children.Add(lbl);
             }
 
-            // draw row title
             TextBlock rowTitleText = new TextBlock
             {
                 Text = rowTitle,
@@ -193,7 +194,6 @@ namespace WpfApp1
             Canvas.SetTop(rowTitleText, cellSize * (rows / 2.0) - 20);
             karnaughCanvas.Children.Add(rowTitleText);
 
-            // draw row labels
             for (int y = 0; y < rows; y++)
             {
                 string label = vars == 4 ? grayRowsAB[y] : grayRowsA[y];
@@ -260,7 +260,6 @@ namespace WpfApp1
             karnaughCanvas.Height = rows * cellSize + 120;
         }
 
-        // ---------------- Draw groups (filled + outline) ----------------
         private void DrawGroupsFilled(List<List<(int y, int x)>> grupos, int vars)
         {
             double cellSize = 80;
@@ -291,7 +290,6 @@ namespace WpfApp1
                     karnaughCanvas.Children.Add(overlay);
                 }
 
-                // draw outlines grouping consecutive columns per row for better visuals
                 var byRow = grupo.GroupBy(g => g.y).OrderBy(g => g.Key);
                 foreach (var rowGroup in byRow)
                 {
@@ -332,14 +330,12 @@ namespace WpfApp1
             karnaughCanvas.Children.Add(outline);
         }
 
-        // ---------------- Find groups (2,4,8) with wrap-around ----------------
         private List<List<(int y, int x)>> FindGroups(bool[] truthBits, int vars)
         {
             int rows = (vars == 2) ? 2 : (vars == 3 ? 2 : 4);
             int cols = (vars == 2) ? 2 : 4;
             var order = GetKmapOrder(vars);
 
-            // coord->index matrix
             int[,] coordToIndex = new int[rows, cols];
             for (int y = 0; y < rows; y++)
                 for (int x = 0; x < cols; x++)
@@ -351,7 +347,6 @@ namespace WpfApp1
                 return idx < truthBits.Length && truthBits[idx];
             }
 
-            // sizes allowed (prioritize bigger)
             int[] sizes = vars == 4 ? new[] { 8, 4, 2 } : new[] { 4, 2 };
 
             var candidatos = new List<List<(int y, int x)>>();
@@ -393,7 +388,6 @@ namespace WpfApp1
                 }
             }
 
-            // greedy selection by coverage
             var selecionados = new List<List<(int y, int x)>>();
             var uncovered = new HashSet<(int y, int x)>();
             for (int y = 0; y < rows; y++)
@@ -412,7 +406,6 @@ namespace WpfApp1
                 }
             }
 
-            // last resort: singletons if still uncovered
             foreach (var cell in uncovered.ToList())
             {
                 selecionados.Add(new List<(int y, int x)> { cell });
@@ -422,7 +415,6 @@ namespace WpfApp1
             return selecionados;
         }
 
-        // ---------------- Simplify expression from groups (correct mapping) ----------------
         private string SimplificarExpressaoFromGroups(List<List<(int y, int x)>> grupos, int vars)
         {
             string[] letras = vars switch

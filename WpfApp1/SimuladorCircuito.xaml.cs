@@ -396,7 +396,6 @@ namespace WpfApp1
                 for (int b = 0; b < n; b++)
                     row[b] = bits[b] ? 1 : 0;
 
-                // saídas (usa PortInfo.Value da saída)
                 for (int s = 0; s < saidas.Count; s++)
                     row[n + s] = saidas[s].Value ? 1 : 0;
 
@@ -435,12 +434,10 @@ namespace WpfApp1
                     Username = username
                 };
 
-                // map GateModel -> tempIndex
                 var gateIndex = new Dictionary<GateModel, int>();
                 for (int i = 0; i < gates.Count; i++)
                     gateIndex[gates[i]] = i;
 
-                // preparar portas
                 for (int i = 0; i < gates.Count; i++)
                 {
                     var gm = gates[i];
@@ -448,7 +445,6 @@ namespace WpfApp1
                     double posX = Canvas.GetLeft(ctrl);
                     double posY = Canvas.GetTop(ctrl);
 
-                    // obter coluna e index na coluna (se existir)
                     int coluna = -1;
                     int idx = -1;
                     foreach (var kv in colunas)
@@ -474,7 +470,6 @@ namespace WpfApp1
                     });
                 }
 
-                // preparar conexões a partir de wires
                 foreach (var w in wires)
                 {
                     if (w.Source == null || w.Target == null) continue;
@@ -514,7 +509,6 @@ namespace WpfApp1
                 var data = circuitoDAO.CarregarCircuito(circuitoId);
                 if (data == null) { MessageBox.Show("Circuito não encontrado"); return; }
 
-                // limpar canvas atual (wires visuais)
                 foreach (var w in wires.ToList())
                 {
                     if (w.PathVisual != null && cnvSimulador.Children.Contains(w.PathVisual))
@@ -522,14 +516,12 @@ namespace WpfApp1
                 }
                 wires.Clear();
 
-                // limpar controles das portas
                 foreach (var ctrl in modelToControl.Values.ToList())
                     cnvSimulador.Children.Remove(ctrl);
                 modelToControl.Clear();
                 gates.Clear();
                 colunas.Clear();
 
-                // recriar portas (mantendo a ordem data.Portas -> tempIndex)
                 foreach (var p in data.Portas)
                 {
                     // localizar Type a partir do nome salvo
@@ -553,20 +545,17 @@ namespace WpfApp1
                     control.AddHandler(GateControl.OutputPortClickedEvent, new RoutedEventHandler(OnOutputPortClicked));
                     control.AddHandler(GateControl.InputPortClickedEvent, new RoutedEventHandler(OnInputPortClicked));
 
-                    // posicionamento no canvas
                     Canvas.SetLeft(control, p.PosX);
                     Canvas.SetTop(control, p.PosY);
 
                     cnvSimulador.Children.Add(control);
                     modelToControl[model] = control;
 
-                    // reconstruir colunas
                     if (!colunas.ContainsKey(p.Coluna))
                         colunas[p.Coluna] = new List<GateModel>();
                     colunas[p.Coluna].Add(model);
                 }
 
-                // Agora recriar conexões (wires) usando os indices temporários
                 foreach (var c in data.Conexoes)
                 {
                     if (c.SourceTempIndex < 0 || c.SourceTempIndex >= gates.Count) continue;
@@ -600,22 +589,17 @@ namespace WpfApp1
                 {
                     try
                     {
-                        // garante que os controles já foram medidos e posicionados
                         this.UpdateLayout();
 
-                        // recalcula posição/geomtria de todos os wires explicitamente
                         foreach (var wire in wires)
                         {
-                            // proteção caso algum wire ainda não tenha PathVisual
                             if (wire == null || wire.PathVisual == null) continue;
                             UpdateWirePosition(wire);
                             wire.UpdateColor();
                         }
 
-                        // atualiza visuais dos controles (círculos, cores, etc)
                         RefreshAllControls();
 
-                        // reavalia lógica de saída das portas (opcional, mas seguro)
                         EvaluateAll();
                     }
                     catch (Exception ex)
@@ -630,12 +614,9 @@ namespace WpfApp1
             }
         }
 
-        // Helper: obtém índice do pino dentro do control (input index ou 0 para saída)
         private int GetPortIndex(PortInfo p)
         {
             if (p == null) return 0;
-            // se PortInfo expõe propriedade Index -> usar aqui (ex: p.Index)
-            // caso contrário, procura dentro do control inputs
             if (p.IsOutput)
                 return 0; // saída padrão
             var ctrl = modelToControl.GetValueOrDefault(p.Gate);
@@ -659,7 +640,6 @@ namespace WpfApp1
         private PortInfo GetOutputPortByIndex(GateControl control, int index)
         {
             if (control == null) return null;
-            // normalmente um gate tem apenas uma saída
             return control.OutputPort;
         }
 
@@ -673,7 +653,6 @@ namespace WpfApp1
                 if (string.IsNullOrWhiteSpace(nome))
                     return;
 
-                // CORREÇÃO IMPORTANTE AQUI
                 if (string.IsNullOrWhiteSpace(App.CurrentUsername))
                 {
                     MessageBox.Show("Usuário não identificado. Faça login novamente.");

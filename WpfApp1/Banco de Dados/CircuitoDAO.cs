@@ -4,24 +4,23 @@ using System.Data.SQLite;
 
 namespace WpfApp1.Banco_de_Dados
 {
-    // DTOs simples para comunicação entre UI e DAO
     public class PortaRecord
     {
-        public int TempIndex;      // índice temporário na memória (0..N-1)
-        public string Tipo;       // nome do tipo, ex: "AndGate"
+        public int TempIndex;     
+        public string Tipo;     
         public double PosX;
         public double PosY;
         public int Coluna;
         public int IndexNaColuna;
-        public int DbId;          // preenchido após salvar (Id da tabela Portas)
+        public int DbId;          
     }
 
     public class ConexaoRecord
     {
-        public int SourceTempIndex; // PortaRecord.TempIndex da porta de saída
-        public int SourcePortIndex; // índice do pino de saída (geralmente 0)
-        public int TargetTempIndex; // PortaRecord.TempIndex da porta de entrada
-        public int TargetPortIndex; // índice do pino de entrada
+        public int SourceTempIndex; 
+        public int SourcePortIndex; 
+        public int TargetTempIndex; 
+        public int TargetPortIndex; 
     }
 
     public class CircuitoData
@@ -70,7 +69,6 @@ namespace WpfApp1.Banco_de_Dados
                     p.DbId = (int)conn.LastInsertRowId;
                 }
 
-                // inserir conexões — precisamos mapear tempIndex -> dbId
                 foreach (var c in data.Conexoes)
                 {
                     var src = data.Portas.Find(p => p.TempIndex == c.SourceTempIndex);
@@ -169,7 +167,6 @@ namespace WpfApp1.Banco_de_Dados
                 {
                     var psid = Convert.ToInt32(r["PortaSaidaId"]);
                     var peid = Convert.ToInt32(r["PortaEntradaId"]);
-                    // map dbId -> tempIndex
                     var src = data.Portas.Find(p => p.DbId == psid);
                     var tgt = data.Portas.Find(p => p.DbId == peid);
                     if (src == null || tgt == null) continue;
