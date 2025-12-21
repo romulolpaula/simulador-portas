@@ -50,6 +50,12 @@ Simulador de Mapa de Karnaugh montado pelo usuário para simplificação de expr
 
 ---
 
+## Interface do Simulador 
+
+<img width="1919" height="1016" alt="image" src="https://github.com/user-attachments/assets/a0e9becc-f357-4ff9-81c3-48267f6a74b0" />
+
+---
+
 ## Autoria
 
 Projeto desenvolvido por **Mariah Cesar** e **Rômulo Lopes**, como parte das atividades acadêmicas do curso de Engenharia da Computação.
